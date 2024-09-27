@@ -61,13 +61,7 @@ static char scancode_to_ascii[128] = {
     [0x5A] = '\n',
     [0x66] = 0x08, // BS
 };
-// int get_scancode(){
-//     char scancode = 0;
-//     while(scancode == 0){
-//         scancode = *(char*)KEYBOARD_ADDR;
-//     }
-//     return scancode;
-// }
+
 #ifndef SIM_MODE
 int getchark()
 {
@@ -207,7 +201,7 @@ static void newline()
     CUR_LINE = (CUR_LINE + 1) % 30;
     for (int j = 0; j < STDOUT_LINE_SIZE; j++)
     {
-        stdout_buffer[CUR_LINE % 30][j] = 0;
+        stdout_buffer[CUR_LINE][j] = 0;
     }
     if (tty_screen_full)
     {
@@ -231,7 +225,7 @@ void putchark(int c)
             if (CUR_LINE > 0)
             {
                 CUR_LINE--;
-                CUR_COL = 29;
+                CUR_COL = 79;
             }
             else
             {
