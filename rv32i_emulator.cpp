@@ -183,7 +183,7 @@ int mmio_read(int addr)
         return baseline;
         break;
     case 3:
-        return gui_buffer[(addr >> 2) & 1023];
+        return gui_buffer[(addr >> 2) & 4095];
         break;
     case 4:
         return -1;
@@ -212,7 +212,7 @@ void mmio_write(int addr, int din)
         baseline = din;
         break;
     case 3:
-        gui_buffer[(addr >> 2) & 1023] = din;
+        gui_buffer[(addr >> 2) & 4095] = din;
         update_vmem(addr);
         break;
     case 4:

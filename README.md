@@ -3,7 +3,11 @@ This project serves as a foundation for you to write programs to be run on the s
 
 ## Dependencies
 
-The [riscv-gnu-toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) is needed to compile the source code to RISC-V instructions.
+1. The [riscv-gnu-toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain) is needed to compile the source code to RISC-V instructions.
+2. To compile the emulator, you should also install SDL library by the following command(Ubuntu).
+```bash
+$ sudo apt-get install libsdl2-2.0-0
+```
 
 ## Usage
 Write source code and save it in `apps/`(for example, `apps/tty.c`). Then build it with command`make xxx`(for example, `make tty`).
