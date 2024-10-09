@@ -7,19 +7,20 @@
 #include <cstring>
 #include <SDL2/SDL.h>
 #define CHRBUF_MAX_LINES 30
-#define CHRBUF_MAX_COLS 80
+#define CHRBUF_MAX_COLS 80 // character buffer size 30*80
 #define GUIBUF_MAX_LINES 60
-#define GUIBUF_MAX_COLS 80
-#define SCREEN_W 640
-#define SCREEN_H 480
+#define GUIBUF_MAX_COLS 80 // guibuffer size 60*80
+#define SCREEN_W 640       // screen pixel width
+#define SCREEN_H 480       // screen pixel height
 using namespace std;
 struct Keyboard
 {
-    char fifo[8];
-    int head, tail;
-    int ready;
+    char fifo[8];   // read write buffer
+    int head, tail; // pointer head: next character to read; tail: next character to write
+    int ready;      // whether the fifo has new character to read
     char get()
     {
+        // simmulate the keyboard input fifo queue
         if (ready)
         {
             if ((head + 1) % 8 == tail)
@@ -46,17 +47,19 @@ struct Keyboard
         ready = 1;
     }
 } kbd;
-int ram[1024];
+
+int ram[1024]; // simulate RAM
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;
-uint16_t *vmem;
-int stdout_buffer[CHRBUF_MAX_LINES * 32];
-int gui_buffer[GUIBUF_MAX_LINES * 64];
+uint16_t *vmem; // video memory
+int stdout_buffer[CHRBUF_MAX_LINES * 32]; // 30 * 128
+int gui_buffer[GUIBUF_MAX_LINES * 64]; // 60 * 128
 vector<string> ascii_shape;
 int baseline = 0;
 int gui = 0;
 void init_asciirom()
 {
+    // store ascii shape
     ascii_shape.assign(256, string());
     std::ifstream file("asciirom.hex");
     std::string elem;
@@ -64,6 +67,7 @@ void init_asciirom()
     while (file >> elem)
     {
         std::string tmp;
+        // change hex to binary
         for (int i = 0; i < elem.size(); i++)
         {
             int n = stoi(elem.substr(i, 1), nullptr, 16);
@@ -85,13 +89,19 @@ void init_asciirom()
 }
 void flush_vmem()
 {
+    // update from buffer
     if (gui)
     {
+        // vmem load the gui_buffer
         for (int i = 0; i < SCREEN_H; i++)
         {
             for (int j = 0; j < SCREEN_W; j++)
             {
+                // GUI pixel size is 8*8
                 int pos = i / 8 * 80 + j / 8;
+                // notice that the pixel is 12 bit for convenience we treat it as 16 bit
+                // thereforer it is 16 bit rather than 32 bit in gui_buffer
+                // this code is to get the correct pixel value in the correct position
                 vmem[i * SCREEN_W + j] = gui_buffer[pos >> 1] >> ((pos & 1) * 16) & 0xffff;
             }
         }
@@ -102,6 +112,9 @@ void flush_vmem()
         {
             for (int j = 0; j < SCREEN_W; j++)
             {
+                // character size is 8*16
+                // extract the ascii code from the stdout_buffer
+                // each int in stdout_buffer store 4 ascii code
                 int pos = i / 16 * 80 + j / 8;
                 int ascii = 0;
                 if (pos & 0b11 == 0)
@@ -127,14 +140,21 @@ void flush_vmem()
 }
 void update_vmem(int addr)
 {
+    // update from addr
+    // the length of the instruction is 20
     int buffer_addr = addr & 0xfffff;
     if (gui)
     {
+        // line * 80 + col
         int pos = (buffer_addr >> 1) / 128 * 80 + (buffer_addr >> 1) % 128;
         for (int i = pos / 80 * 8; i < pos / 80 * 8 + 8; i++)
         {
             for (int j = pos % 80 * 8; j < pos % 80 * 8 + 8; j++)
             {
+                // extract high 16 bits or low 16 bits
+                // buffer addr use bytes as unit
+                // while gui_buffer use int as unit
+                // and pixel use 16 bit as unit
                 vmem[i * 640 + j] = (buffer_addr >> 1 & 1) ? gui_buffer[buffer_addr >> 2] >> 16 & 0xffff : gui_buffer[buffer_addr >> 2] & 0xffff;
             }
         }
