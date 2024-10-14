@@ -12,7 +12,7 @@ color_rgb common_colors[] = {
     {0xf, 0, 0},     // red
     {0, 0xf, 0},     // green
     {0, 0, 0xf},     // blue
-    {0xf, 0xf, 0},   // yellow
+    {0xf, 0xf, 0},   // yellow 
     {0, 0xf, 0xf},   // cyan
     {0xf, 0, 0xf},   // megenta
     {0xf, 0xf, 0xf}, // white
