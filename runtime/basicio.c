@@ -9,6 +9,7 @@ static int CUR_LINE = 0;
 static int CUR_COL = 0;
 static char kbd_shift = 0;
 static char kbd_capslock = 0;
+// scancode is what keyboard input which need to transfer to ascii
 static char scancode_to_ascii[128] = {
     [0x16] = '1',
     [0x1E] = '2',
@@ -71,6 +72,7 @@ int getchark()
     {
         return -1;
     }
+    // 0xF0 is a special code for release key
     if (scan_code == 0xF0)
     {
         scan_code = 0;
@@ -79,7 +81,8 @@ int getchark()
             scan_code = *(volatile char *)KEYBOARD_ADDR;
         }
         if (scan_code == 0x12)
-        { // shift release
+        {
+            // shift release
             kbd_shift = 0;
         }
         return -1;
