@@ -2,7 +2,7 @@ CC := riscv64-unknown-elf-gcc
 LD := riscv64-unknown-elf-ld
 AR := riscv64-unknown-elf-ar
 OBJCOPY := riscv64-unknown-elf-objcopy
-CFLAGS := -O0 -nostdlib -ffreestanding -fno-builtin -march=rv32i -mabi=ilp32 -I./runtime/
+CFLAGS := -O1 -nostdlib -ffreestanding -fno-builtin -march=rv32i -mabi=ilp32 -I./runtime/
 LDFLAGS := -m elf32lriscv -T linker.ld
 APP_DIR := apps
 OBJ_DIR := build

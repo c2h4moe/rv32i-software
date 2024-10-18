@@ -5,6 +5,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <cstring>
+#include <chrono>
+#include <thread>
+#include <unistd.h>
 #include <SDL2/SDL.h>
 #define CHRBUF_MAX_LINES 30
 #define CHRBUF_MAX_COLS 80
@@ -55,6 +58,10 @@ int gui_buffer[GUIBUF_MAX_LINES * 64];
 vector<string> ascii_shape;
 int baseline = 0;
 int gui = 0;
+int cycle = 0;
+int sleepstate = 0;
+int sleepfor = 0;
+auto timebegin = chrono::high_resolution_clock::now();
 void init_asciirom()
 {
     ascii_shape.assign(256, string());
@@ -188,6 +195,9 @@ int mmio_read(int addr)
     case 4:
         return -1;
         break;
+    case 5:
+        return cycle;
+        break;
     case 0xbad:
         return kbd.get();
         break;
@@ -218,6 +228,11 @@ void mmio_write(int addr, int din)
     case 4:
         gui = din & 1;
         flush_vmem();
+        break;
+    case 5:
+        sleepstate = 1;
+        sleepfor = din;
+        timebegin = chrono::high_resolution_clock::now();
         break;
     default:
         break;
@@ -552,9 +567,19 @@ int main(int argc, char **argv)
     texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB444,
                                 SDL_TEXTUREACCESS_STATIC, SCREEN_W, SCREEN_H);
     int cnt = 0;
+    // auto ta = chrono::high_resolution_clock::now();
+    // int cntcycle = 0;
     while (1)
     {
-        cpu.eval();
+        if(!sleepstate){
+            cpu.eval();
+        } else {
+            auto curtime = chrono::high_resolution_clock::now();
+            auto dur = chrono::duration_cast<chrono::milliseconds>(curtime - timebegin);
+            if(dur.count() > sleepfor){
+                sleepstate = 0;
+            }
+        }
         // printf("pc:%x, mem_wa:%x, mem_we:%d, mem_din:%x\n", cpu.pc, cpu.mem_wa, cpu.mem_we, cpu.mem_din);
         cnt++;
         if (cnt == 2000)
@@ -563,5 +588,14 @@ int main(int argc, char **argv)
             cnt = 0;
         }
         doInput();
+        // auto tb = chrono::high_resolution_clock::now();
+        // auto dur = std::chrono::duration_cast<chrono::milliseconds>(tb - ta);
+        // cntcycle ++;
+        // if(dur.count() > 1000){
+        //     cerr<<cntcycle<<"\n";
+        //     cntcycle = 0;
+        //     ta = chrono::high_resolution_clock::now();
+        // }
+        cycle ++;
     }
 }

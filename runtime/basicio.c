@@ -2,7 +2,7 @@
 #define TTY_SCAN_BASELINE (0x200000)
 #define KEYBOARD_ADDR (0xbad00000)
 #define STDOUT_LINE_SIZE (80)
-static char (*stdout_buffer)[128] = (char (*)[128])STDOUT_BUFFER_BASE;
+static volatile char (*stdout_buffer)[128] = (volatile char (*)[128])STDOUT_BUFFER_BASE;
 static int scan_baseline = 0;
 static int tty_screen_full = 0;
 static int CUR_LINE = 0;
@@ -65,7 +65,7 @@ static char scancode_to_ascii[128] = {
 #ifndef SIM_MODE
 int getchark()
 {
-    char scan_code = *(char *)KEYBOARD_ADDR;
+    char scan_code = *(volatile char *)KEYBOARD_ADDR;
     char res = 0;
     if (scan_code == 0)
     {
@@ -76,7 +76,7 @@ int getchark()
         scan_code = 0;
         while (scan_code == 0)
         {
-            scan_code = *(char *)KEYBOARD_ADDR;
+            scan_code = *(volatile char *)KEYBOARD_ADDR;
         }
         if (scan_code == 0x12)
         { // shift release
@@ -206,7 +206,7 @@ static void newline()
     if (tty_screen_full)
     {
         scan_baseline = (scan_baseline + 1) % 30;
-        *(int *)TTY_SCAN_BASELINE = scan_baseline;
+        *(volatile int *)TTY_SCAN_BASELINE = scan_baseline;
     }
     CUR_COL = 0;
 }
