@@ -1,5 +1,6 @@
-#pragma once
 #include <basicio.h>
+#include "basictime.h"
+
 #define KEYBOARD_ADDR (0xbad00000)
 #define GUI_MODE_BASE_ADDR (0x00300000)
 #define MODE_CONTROL_ADDR (0x00400000)
@@ -98,10 +99,7 @@ int main()
 		{
 			break;
 		}
-		for (int i = 0; i < 4000; i++)
-		{
-			asm("nop");
-		}
+		sleep(200);
 	}
 
 	asm("ebreak");
