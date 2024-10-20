@@ -11,10 +11,10 @@
 #include <SDL2/SDL.h>
 #define CHRBUF_MAX_LINES 30
 #define CHRBUF_MAX_COLS 80 // character buffer size 30*80
-#define GUIBUF_MAX_LINES 60
-#define GUIBUF_MAX_COLS 80 // guibuffer size 60*80
-#define SCREEN_W 640       // screen pixel width
-#define SCREEN_H 480       // screen pixel height
+#define GUIBUF_MAX_LINES 240
+#define GUIBUF_MAX_COLS 320 // guibuffer size 60*80
+#define SCREEN_W 640        // screen pixel width
+#define SCREEN_H 480        // screen pixel height
 using namespace std;
 struct Keyboard
 {
@@ -54,9 +54,11 @@ struct Keyboard
 int ram[1024]; // simulate RAM
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture *texture = NULL;
-uint16_t *vmem; // video memory
-int stdout_buffer[CHRBUF_MAX_LINES * 32]; // 30 * 128
-int gui_buffer[GUIBUF_MAX_LINES * 64]; // 60 * 128
+uint16_t *vmem;                                           // video memory
+int stdout_buffer[CHRBUF_MAX_LINES * 32];                 // 30 * 128
+uint16_t gui_buffer0[GUIBUF_MAX_LINES * GUIBUF_MAX_COLS]; // 60 * 128
+uint16_t gui_buffer1[GUIBUF_MAX_LINES * GUIBUF_MAX_COLS];
+int cur_gui_writebuffer = 0;
 vector<string> ascii_shape;
 int baseline = 0;
 int gui = 0;
@@ -104,12 +106,13 @@ void flush_vmem()
         {
             for (int j = 0; j < SCREEN_W; j++)
             {
-                // GUI pixel size is 8*8
-                int pos = i / 8 * 80 + j / 8;
-                // notice that the pixel is 12 bit for convenience we treat it as 16 bit
-                // thereforer it is 16 bit rather than 32 bit in gui_buffer
-                // this code is to get the correct pixel value in the correct position
-                vmem[i * SCREEN_W + j] = gui_buffer[pos >> 1] >> ((pos & 1) * 16) & 0xffff;
+                vmem[i * SCREEN_W + j] = cur_gui_writebuffer ? gui_buffer0[(i >> 1) * 320 + (j >> 1)] : gui_buffer1[(i >> 1) * 320 + (j >> 1)];
+                // // GUI pixel size is 8*8
+                // int pos = i / 8 * 80 + j / 8;
+                // // notice that the pixel is 12 bit for convenience we treat it as 16 bit
+                // // thereforer it is 16 bit rather than 32 bit in gui_buffer
+                // // this code is to get the correct pixel value in the correct position
+                // vmem[i * SCREEN_W + j] = gui_buffer[pos >> 1] >> ((pos & 1) * 16) & 0xffff;
             }
         }
     }
@@ -152,19 +155,28 @@ void update_vmem(int addr)
     int buffer_addr = addr & 0xfffff;
     if (gui)
     {
-        // line * 80 + col
-        int pos = (buffer_addr >> 1) / 128 * 80 + (buffer_addr >> 1) % 128;
-        for (int i = pos / 80 * 8; i < pos / 80 * 8 + 8; i++)
+        int line = ((buffer_addr >> 1) / 320) << 1;
+        int col = ((buffer_addr >> 1) % 320) << 1;
+        for (int i = line; i < line + 2; i++)
         {
-            for (int j = pos % 80 * 8; j < pos % 80 * 8 + 8; j++)
+            for (int j = col; j < col + 2; j++)
             {
-                // extract high 16 bits or low 16 bits
-                // buffer addr use bytes as unit
-                // while gui_buffer use int as unit
-                // and pixel use 16 bit as unit
-                vmem[i * 640 + j] = (buffer_addr >> 1 & 1) ? gui_buffer[buffer_addr >> 2] >> 16 & 0xffff : gui_buffer[buffer_addr >> 2] & 0xffff;
+                vmem[i * SCREEN_W + j] = cur_gui_writebuffer ? gui_buffer0[buffer_addr >> 1] : gui_buffer1[buffer_addr >> 1];
             }
         }
+        // line * 80 + col
+        // int pos = (buffer_addr >> 1) / 128 * 80 + (buffer_addr >> 1) % 128;
+        // for (int i = pos / 80 * 8; i < pos / 80 * 8 + 8; i++)
+        // {
+        //     for (int j = pos % 80 * 8; j < pos % 80 * 8 + 8; j++)
+        //     {
+        //         // extract high 16 bits or low 16 bits
+        //         // buffer addr use bytes as unit
+        //         // while gui_buffer use int as unit
+        //         // and pixel use 16 bit as unit
+        //         vmem[i * 640 + j] = (buffer_addr >> 1 & 1) ? gui_buffer[buffer_addr >> 2] >> 16 & 0xffff : gui_buffer[buffer_addr >> 2] & 0xffff;
+        //     }
+        // }
     }
     else
     {
@@ -210,7 +222,7 @@ int mmio_read(int addr)
         return baseline;
         break;
     case 3:
-        return gui_buffer[(addr >> 2) & 4095];
+        return 0;
         break;
     case 4:
         return -1;
@@ -220,6 +232,9 @@ int mmio_read(int addr)
         break;
     case 0xbad:
         return kbd.get();
+        break;
+    case 0xbee:
+        return 0;
         break;
     default:
         return 0;
@@ -242,7 +257,12 @@ void mmio_write(int addr, int din)
         baseline = din;
         break;
     case 3:
-        gui_buffer[(addr >> 2) & 4095] = din;
+        if(cur_gui_writebuffer){
+            gui_buffer1[(addr & 0xfffff) >> 1] = (addr >> 1 & 1) ? (din >> 16 & 0xffff) : (din & 0xffff);
+        } else {
+            gui_buffer0[(addr & 0xfffff) >> 1] = (addr >> 1 & 1) ? (din >> 16 & 0xffff) : (din & 0xffff);
+        }
+        // gui_buffer[(addr >> 2) & 4095] = din;
         update_vmem(addr);
         break;
     case 4:
@@ -253,6 +273,12 @@ void mmio_write(int addr, int din)
         sleepstate = 1;
         sleepfor = din;
         timebegin = chrono::high_resolution_clock::now();
+        break;
+    case 0xbee:
+        if(din&1){
+            cur_gui_writebuffer = !cur_gui_writebuffer;
+            flush_vmem();
+        }
         break;
     default:
         break;
@@ -591,12 +617,16 @@ int main(int argc, char **argv)
     // int cntcycle = 0;
     while (1)
     {
-        if(!sleepstate){
+        if (!sleepstate)
+        {
             cpu.eval();
-        } else {
+        }
+        else
+        {
             auto curtime = chrono::high_resolution_clock::now();
             auto dur = chrono::duration_cast<chrono::milliseconds>(curtime - timebegin);
-            if(dur.count() > sleepfor){
+            if (dur.count() > sleepfor)
+            {
                 sleepstate = 0;
             }
         }
@@ -616,6 +646,6 @@ int main(int argc, char **argv)
         //     cntcycle = 0;
         //     ta = chrono::high_resolution_clock::now();
         // }
-        cycle ++;
+        cycle++;
     }
 }

@@ -22,6 +22,9 @@ ifeq ($(mode),sim)
 CFLAGS += -D SIM_MODE
 endif
 
+simulator:
+	g++ -O3 -o rv32i_emulator rv32i_emulator.cpp `sdl2-config --cflags --libs`
+
 $(RUNTIME_OBJS) : %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $^
 
@@ -48,7 +51,7 @@ $(PROGRAMS): %: %.o runtime/_start.o
 	rm $(patsubst $(OBJ_DIR)/%,$(TARGET_DIR)/%, $@)_inst.hex
 	rm $(patsubst $(OBJ_DIR)/%,$(TARGET_DIR)/%, $@)_data.hex
 
-$(TARGETS): %: $(OBJ_DIR)/%
+$(TARGETS): %: $(OBJ_DIR)/% simulator
 
 all: $(PROGRAMS)
 
