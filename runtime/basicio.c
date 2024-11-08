@@ -2,7 +2,7 @@
 #define TTY_SCAN_BASELINE (0x200000)
 #define KEYBOARD_ADDR (0xbad00000)
 #define STDOUT_LINE_SIZE (80)
-static volatile char (*stdout_buffer)[128] = (volatile char (*)[128])STDOUT_BUFFER_BASE;
+static volatile char (*stdout_buffer)[80] = (volatile char (*)[80])STDOUT_BUFFER_BASE;
 static int scan_baseline = 0;
 static int tty_screen_full = 0;
 static int CUR_LINE = 0;
@@ -197,18 +197,18 @@ int getchark()
 #endif
 static void newline()
 {
-    if (CUR_LINE == 29)
+    if (CUR_LINE == 31)
     {
         tty_screen_full = 1;
     }
-    CUR_LINE = (CUR_LINE + 1) % 30;
+    CUR_LINE = (CUR_LINE + 1) & 31;
     for (int j = 0; j < STDOUT_LINE_SIZE; j++)
     {
         stdout_buffer[CUR_LINE][j] = 0;
     }
     if (tty_screen_full)
     {
-        scan_baseline = (scan_baseline + 1) % 30;
+        scan_baseline = (scan_baseline + 1) & 31;
         *(volatile int *)TTY_SCAN_BASELINE = scan_baseline;
     }
     CUR_COL = 0;
