@@ -33,7 +33,7 @@
 #define PROPELLER_H 27
 #define PROPELLER_RUNNING_W 40
 #define PROPELLER_RUNNING_H 31
-
+#define ROLE_SPEED 5
 struct Keyboard
 {
     char fifo[8];   // read write buffer
@@ -74,6 +74,7 @@ int game_mode = 0;
 int game_buf = 0;
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
+
 
 int ram[1024]; // simulate RAM
 std::vector<std::string> ascii_shape;
@@ -148,7 +149,6 @@ typedef struct {
         this->xAddr = (content >> 11) & 0x7ff;
         this->num = (content >> 22) & 0x3ff;
     }
-
 } imageReg;
 
 imageReg gameRegs[REGS_NUM];
@@ -749,21 +749,42 @@ void init_mem(const char *ram_file)
     }
     file.close();
 }
+void moveRight(bool Right) {
+    int x = gameRegs[REGS_NUM - 1].getxAddr();
+    if (Right) {
+        x += ROLE_SPEED;
+    } else {
+        x -= ROLE_SPEED;
+    }
+    gameRegs[REGS_NUM - 1].set((gameRegs[REGS_NUM - 1].content & 0xffc007ff) | (x << 11));
+    shouldRender = true;
+}
 void doInput()
 {
     SDL_Event event;
     while (SDL_PollEvent(&event))
     {
-        switch (event.type)
-        {
-        case SDL_QUIT:
+        if(event.type == SDL_QUIT) {
             exit(0);
-            break;
-        case SDL_KEYDOWN:
-            kbd.input(event.key.keysym.sym == '\r' ? '\n' : event.key.keysym.sym);
-            break;
-        default:
-            break;
+        }
+        else if(event.type == SDL_KEYDOWN) {
+            //kbd.input(event.key.keysym.sym == '\r' ? '\n' : event.key.keysym.sym);
+            switch(event.key.keysym.sym) {
+                case SDLK_UP:
+                    break;
+                case SDLK_DOWN:
+                    break;
+                case SDLK_LEFT:
+                    moveRight(false);
+                    break;
+                case SDLK_RIGHT:
+                    moveRight(true);
+                    break;
+                case SDLK_RETURN:
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
@@ -785,13 +806,14 @@ int main(int argc, char **argv)
     loadMedia();
     initImage();
     initRegs();     
-    render_game();
+    
     while (true)
     {
+        doInput();
         if (!sleepstate)
         {
             cpu.eval();
-            if(shouldRender) {
+            if(shouldRender) { //只有当前指令修改了imgReg才会再渲染
                 render_game();
                 shouldRender = false;
             }
@@ -806,6 +828,11 @@ int main(int argc, char **argv)
             }
         }
         cycle++;
-        doInput();
     }
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+
+    return 0;
 }
