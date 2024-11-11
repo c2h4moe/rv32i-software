@@ -165,7 +165,6 @@ typedef struct {
         int y = reg->getyAddr();
         SDL_Rect dest = {x, y, wide, high};
         SDL_RenderCopy(renderer, texture, NULL, &dest);
-        SDL_RenderPresent(renderer);
     }
 } image;
 
@@ -301,13 +300,40 @@ void initRegs() {
 
 void render_game()
 {
-    for(int i = 0; i < REGS_NUM; i++) {
-        imageReg * reg = &gameRegs[i];
-        image * img = findImage(reg->type, reg->getNum());
+    SDL_RenderClear(renderer);
+    int i;
+    imageReg * reg;
+    image * img;
+    for( i = 0; i < REGS_NUM - 5; i++) {
+        reg = &gameRegs[i];
+        if(reg->num == 0) {
+            continue;
+        }
+        img = findImage(reg->type, reg->getNum());
         if (img != NULL) {
             img->draw(reg);
         }
     }
+    
+    //之前的优先级和寄存器顺序是对应的，但是主角和道具要颠倒一下
+    reg = &gameRegs[REGS_NUM - 1];
+    img = findImage(reg->type, reg->getNum());
+    if (img != NULL) {
+        img->draw(reg);
+    }
+
+    for(;i < REGS_NUM - 1; i++) {
+        reg = &gameRegs[i];
+        if(reg->num == 0) {
+            continue;
+        }
+        img = findImage(reg->type, reg->getNum());
+        if (img != NULL) {
+            img->draw(reg);
+        }
+    }
+
+    SDL_RenderPresent(renderer);
 }
 
 SDL_Texture *loadTexture(std::string path)
@@ -758,7 +784,7 @@ int main(int argc, char **argv)
 
     loadMedia();
     initImage();
-    initRegs();
+    initRegs();     
     render_game();
     while (true)
     {
