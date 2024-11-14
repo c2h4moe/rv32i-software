@@ -33,18 +33,17 @@
 #define PROPELLER_H 27
 #define PROPELLER_RUNNING_W 40
 #define PROPELLER_RUNNING_H 31
-#define ROLE_SPEED 5
 struct Keyboard
 {
     char fifo[8];   // read write buffer
-    int head, tail; // pointer head: next character to read; tail: next character to write
-    int ready;      // whether the fifo has new character to read
+    int head = 0, tail = 0; // pointer head: next character to read; tail: next character to write
+    int ready = 0;      // whether the fifo has new character to read
     char get()
     {
         // simmulate the keyboard input fifo queue
         if (ready)
         {
-            if ((head + 1) % 8 == tail)
+            if ((head + 1) % 8 == tail) // fifo has only one element
             {
                 ready = 0;
             }
@@ -505,6 +504,9 @@ Simple_CPU::Simple_CPU(const char *src) : pc{0}, next_pc{0x8000000}, mem_we{0}, 
 }
 void Simple_CPU::eval()
 {
+    if(halt == 1) {
+        exit(0);
+    }
     pc = next_pc;
     int inst = ROM[(pc & 0xfff) >> 2];
     int opcode = (inst >> 2) & 0b11111;
@@ -749,16 +751,6 @@ void init_mem(const char *ram_file)
     }
     file.close();
 }
-void moveRight(bool Right) {
-    int x = gameRegs[REGS_NUM - 1].getxAddr();
-    if (Right) {
-        x += ROLE_SPEED;
-    } else {
-        x -= ROLE_SPEED;
-    }
-    gameRegs[REGS_NUM - 1].set((gameRegs[REGS_NUM - 1].content & 0xffc007ff) | (x << 11));
-    shouldRender = true;
-}
 void doInput()
 {
     SDL_Event event;
@@ -771,14 +763,16 @@ void doInput()
             //kbd.input(event.key.keysym.sym == '\r' ? '\n' : event.key.keysym.sym);
             switch(event.key.keysym.sym) {
                 case SDLK_UP:
+                    kbd.input(0x1);
                     break;
                 case SDLK_DOWN:
+                    kbd.input(0x2);
                     break;
                 case SDLK_LEFT:
-                    moveRight(false);
+                    kbd.input(0x3);
                     break;
                 case SDLK_RIGHT:
-                    moveRight(true);
+                    kbd.input(0x4);
                     break;
                 case SDLK_RETURN:
                     break;
