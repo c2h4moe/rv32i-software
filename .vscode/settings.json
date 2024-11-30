@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "iostream": "cpp",
+        "chrono": "cpp",
+        "cmath": "cpp",
+        "basictime.h": "c"
+    }
+}

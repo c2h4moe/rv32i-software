@@ -1,0 +1,1 @@
+./doodle_emulator ./target/doodle_keyboard_rom.hex ./target/doodle_keyboard_ram.hex
