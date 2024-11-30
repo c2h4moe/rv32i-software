@@ -775,6 +775,10 @@ void doInput()
                     kbd.input(0x4);
                     break;
                 case SDLK_RETURN:
+                    kbd.input(0x0D);
+                    break;
+                case SDLK_SPACE:
+                    kbd.input(0x20);
                     break;
                 default:
                     break;
