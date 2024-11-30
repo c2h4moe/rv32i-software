@@ -146,7 +146,6 @@ struct playerclass
 	PLAYER_STATUS status_before_falling;
 	int flying_t = -1;	//这个是时间变量，记录开始飞行了多少帧。如果是-1说明没有起飞。
 	int t;				//这个是时间变量，用于记录当前距离上一次起跳经过了多少帧
-	double inertia_v;	//惯性速度，移动可以叠加惯性，停下会减少惯性。惯性会带来而外的速度，注意是带方向的
 };
 
 //基础地面类
@@ -601,7 +600,6 @@ void initplayer()
 	player.set(__divsi3(WINDOWW, 5), __divsi3(__mulsi3(WINDOWH, 4), 5) - jump_sum, RIGHT);
 	player.adjust_jumping_status(3);
 	player.t = 0;
-	player.inertia_v = 0;
 	return;
 }
 //绘制初始界面的所有地面
