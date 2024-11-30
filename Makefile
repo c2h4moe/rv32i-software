@@ -3,8 +3,8 @@ LD := riscv64-unknown-elf-ld
 AR := riscv64-unknown-elf-ar
 OBJCOPY := riscv64-unknown-elf-objcopy
 
-CFLAGS := -O2 -flto -nostdlib -ffreestanding -fno-builtin -march=rv32i -mabi=ilp32 -I./runtime/
-LDFLAGS :=  -flto -m elf32lriscv -T linker.ld
+CFLAGS := -O2 -nostdlib -ffreestanding -fno-builtin -march=rv32i -mabi=ilp32 -I./runtime/
+LDFLAGS :=  -m elf32lriscv -T linker.ld
 APP_DIR := apps
 OBJ_DIR := build
 RUNTIME_DIR := runtime
