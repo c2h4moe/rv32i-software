@@ -1,6 +1,6 @@
 MEMORY
 {
-  rom (rxa!w) : ORIGIN = 0x8000000, LENGTH = 4K
+  rom (rxa!w) : ORIGIN = 0x8000000, LENGTH = 8K
   ram (rwa) : ORIGIN = 0x0000000, LENGTH = 4K
 }
 SECTIONS

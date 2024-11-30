@@ -9,61 +9,111 @@ static int CUR_LINE = 0;
 static int CUR_COL = 0;
 static char kbd_shift = 0;
 static char kbd_capslock = 0;
-// scancode is what keyboard input which need to transfer to ascii
-static char scancode_to_ascii[128] = {
-    [0x16] = '1',
-    [0x1E] = '2',
-    [0x26] = '3',
-    [0x25] = '4',
-    [0x2E] = '5',
-    [0x36] = '6',
-    [0x3D] = '7',
-    [0x3E] = '8',
-    [0x46] = '9',
-    [0x45] = '0',
-    [0x1C] = 'a',
-    [0x32] = 'b',
-    [0x21] = 'c',
-    [0x23] = 'd',
-    [0x24] = 'e',
-    [0x2B] = 'f',
-    [0x34] = 'g',
-    [0x33] = 'h',
-    [0x43] = 'i',
-    [0x3B] = 'j',
-    [0x42] = 'k',
-    [0x4B] = 'l',
-    [0x3A] = 'm',
-    [0x31] = 'n',
-    [0x44] = 'o',
-    [0x4D] = 'p',
-    [0x15] = 'q',
-    [0x2D] = 'r',
-    [0x1B] = 's',
-    [0x2C] = 't',
-    [0x3C] = 'u',
-    [0x2A] = 'v',
-    [0x1D] = 'w',
-    [0x22] = 'x',
-    [0x35] = 'y',
-    [0x1A] = 'z',
-    [0x0E] = '`',
-    [0x4E] = '-',
-    [0x55] = '=',
-    [0x54] = '[',
-    [0x5B] = ']',
-    [0x5D] = '\\',
-    [0x4C] = ';',
-    [0x52] = '\'',
-    [0x41] = ',',
-    [0x49] = '.',
-    [0x4A] = '/',
-    [0x29] = ' ',
-    [0x5A] = '\n',
-    [0x66] = 0x08, // BS
-};
+
+typedef enum {
+    IDLE,
+    EXTEND,
+    BREAK
+} KbdReadState;
+KbdReadState curState = IDLE;
+
+// // scancode is what keyboard input which need to transfer to ascii
+// static char scancode_to_ascii[128] = {
+//     [0x16] = '1',
+//     [0x1E] = '2',
+//     [0x26] = '3',
+//     [0x25] = '4',
+//     [0x2E] = '5',
+//     [0x36] = '6',
+//     [0x3D] = '7',
+//     [0x3E] = '8',
+//     [0x46] = '9',
+//     [0x45] = '0',
+//     [0x1C] = 'a',
+//     [0x32] = 'b',
+//     [0x21] = 'c',
+//     [0x23] = 'd',
+//     [0x24] = 'e',
+//     [0x2B] = 'f',
+//     [0x34] = 'g',
+//     [0x33] = 'h',
+//     [0x43] = 'i',
+//     [0x3B] = 'j',
+//     [0x42] = 'k',
+//     [0x4B] = 'l',
+//     [0x3A] = 'm',
+//     [0x31] = 'n',
+//     [0x44] = 'o',
+//     [0x4D] = 'p',
+//     [0x15] = 'q',
+//     [0x2D] = 'r',
+//     [0x1B] = 's',
+//     [0x2C] = 't',
+//     [0x3C] = 'u',
+//     [0x2A] = 'v',
+//     [0x1D] = 'w',
+//     [0x22] = 'x',
+//     [0x35] = 'y',
+//     [0x1A] = 'z',
+//     [0x0E] = '`',
+//     [0x4E] = '-',
+//     [0x55] = '=',
+//     [0x54] = '[',
+//     [0x5B] = ']',
+//     [0x5D] = '\\',
+//     [0x4C] = ';',
+//     [0x52] = '\'',
+//     [0x41] = ',',
+//     [0x49] = '.',
+//     [0x4A] = '/',
+//     [0x29] = ' ',
+//     [0x5A] = '\n',
+//     [0x66] = 0x08, // BS
+// };
+
+
+    
 
 #ifndef SIM_MODE
+#ifndef TTY_MODE
+int getchark(){
+    char scan_code = *(volatile char *)KEYBOARD_ADDR;
+    char res = 0;
+    if(curState == IDLE){
+        if (scan_code == 0xF0){
+            curState = BREAK;
+        } else if (scan_code == 0xE0) {
+            curState = EXTEND;
+        } else {
+            if(scan_code == 0x6B){  // left direction
+                res = 3;
+            } else if(scan_code == 0x75) { // up direction
+                res = 1;
+            } else if(scan_code == 0x72){ // down direction
+                res = 2;
+            } else if(scan_code == 0x29){
+                res = ' ';
+            } else if(scan_code == 0x5A){
+                res = '\n';
+            }
+            curState = IDLE;
+        }
+    } else if(curState == EXTEND) {
+        if (scan_code == 0xF0){
+            curState = BREAK;
+        } else {
+            if(scan_code == 0x74){  // left direction
+                res = 3;
+            }else {
+                curState = IDLE;
+            }
+        }
+    } else {
+        curState = IDLE;
+    }
+    return res;
+}
+#else
 int getchark()
 {
     char scan_code = *(volatile char *)KEYBOARD_ADDR;
@@ -72,7 +122,7 @@ int getchark()
     {
         return -1;
     }
-    // 0xF0 is a special code for release key
+    
     if (scan_code == 0xF0)
     {
         scan_code = 0;
@@ -181,6 +231,7 @@ int getchark()
         }
     }
 }
+#endif
 #else
 int getchark()
 {
