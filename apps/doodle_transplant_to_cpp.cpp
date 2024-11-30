@@ -1,16 +1,15 @@
-#include "random.h"
-#include "basicio.h"
+#include <basicio.h>
 #include "math.c"
 
-#define headline WINDOWH*2/5  //中线高度
-#define DS 1				  //每帧下降的速度
-#define LANDNUM 16   //不是一个界面中的地面数量，后台绘制游戏窗口和窗口上方一个窗口高度的地面
-#define STRINGNUM 4  //后台一共有多少个弹簧
+#define headline 408  //中线高度
+#define DS 1		  //每帧下降的速度
+#define LANDNUM 16    //不是一个界面中的地面数量，后台绘制游戏窗口和窗口上方一个窗口高度的地面
+#define STRINGNUM 4   //后台一共有多少个弹簧
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
 #define WINDOW_TOP (-jump_sum)
-#define LANDS_SPAN (2 * WINDOWH)                                //后台所有的地面所在的一个范围内，绝对值，正数。
-#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + WINDOWH/5)       //后台所有的地面从哪里开始回收
-#define INTERVAL_LAND (LANDS_SPAN / LANDNUM)                    //每一个地面的间隔
+#define LANDS_SPAN (2 * WINDOWH)                      //后台所有的地面所在的一个范围内，绝对值，正数。
+#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 205)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
+#define INTERVAL_LAND (LANDS_SPAN / LANDNUM)          //每一个地面的间隔
 
 #define WINDOWH 1024
 #define WINDOWW 1280
@@ -24,7 +23,7 @@
 #define time_for_a_jump 80      //使用多少帧完成一次完整跳跃
 #define V 80                    //普通起跳初速度，四分之一的总用帧乘以V即一次起跳最大上升高度/像素
 #define STRING_V 150             //弹簧起跳的初速度
-#define JUMP_HEIGHT (V*time_for_a_jump/4)           //一次起跳最大上升高度/像素
+#define JUMP_HEIGHT (V * 20)           //一次起跳最大上升高度/像素
 #define BLUELAND_DS 7           					//蓝色砖块的最大移动速度,别小于2！
 #define FRAGILELAND_DS 8        					//易碎砖块的下降速度
 #define FLYING_T 200
@@ -55,6 +54,19 @@
 #define PROPELLER_H 27
 #define PROPELLER_RUNNING_W 40
 #define PROPELLER_RUNNING_H 31
+
+static int cur = 114514;
+static const int A = 1103515245; // parameter from glibc
+static const int C = 12345; // parameter from glibc
+
+int rand(){
+    cur = (A * cur + C) & 0x7fffffff;
+    return cur;
+}
+
+void seed(int n){
+    cur = n;
+}
 
 //玩家状态
 enum PLAYER_STATUS
@@ -165,8 +177,8 @@ struct landclass
     // 无其他变量
     // bluelandclass();
     // 每个蓝砖生成时产生一个方向变量 1或者-1
-	int direction = 2 * __modsi3(rand(), 2) - 1;
-	int speed = __modsi3(rand() , (BLUELAND_DS - 1)) + 2;
+	int direction = __mulsi3(2, (__modsi3(rand(), 2))) - 1;
+	int speed = __modsi3(rand(), BLUELAND_DS-1) + 2;
     // fragilelandclass();
 	bool broken = FALSE;
 	int broken_t = 0; //距离破碎的时间
@@ -733,7 +745,6 @@ void refresh_all_elements()
 			lands[the_bottom_land_index].type = GREENLAND;
 			if (__modsi3(seed, 10) == 0)
 			{
-                //设置成几就算几分之一的概率产生弹簧
 				create_a_string(&lands[the_bottom_land_index]);
 			}
 			else
