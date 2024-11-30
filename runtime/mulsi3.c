@@ -1,5 +1,5 @@
-unsigned int __mulsi3(unsigned int a, unsigned int b) {
-    unsigned int res = 0;
+int __mulsi3(int a, int b) {
+    int res = 0;
     while (a) {
         if (a & 1) res += b;
         a >>= 1;

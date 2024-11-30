@@ -186,6 +186,7 @@ void initImage() {
     gameImgs[0].wide = GREEN_PLATFORM_W;
     gameImgs[0].high = GREEN_PLATFORM_H;
     gameImgs[0].texture = pic_elem.green_platform;
+
     gameImgs[1].type = PLATFORM;
     gameImgs[1].num = 2;
     gameImgs[1].wide = LIGHT_BLUE_PLATFORM_W;
@@ -197,6 +198,7 @@ void initImage() {
     gameImgs[2].wide = BROWN_PLATFORM_BREAKING_1_H;
     gameImgs[2].high = BROWN_PLATFORM_BREAKING_1_H;
     gameImgs[2].texture = pic_elem.brown_platform_breaking_1;
+
     gameImgs[3].type = FAKE_PLATFORM;
     gameImgs[3].num = 2;
     gameImgs[3].wide = BROWN_PLATFORM_BREAKING_2_W;
@@ -208,6 +210,7 @@ void initImage() {
     gameImgs[4].wide = PURPLE_MONSTER_W;
     gameImgs[4].high = PURPLE_MONSTER_H;
     gameImgs[4].texture = pic_elem.purple_monster;
+
     gameImgs[5].type = MONSTER;
     gameImgs[5].num = 2;
     gameImgs[5].wide = RED_MONSTER_W;
@@ -225,16 +228,19 @@ void initImage() {
     gameImgs[7].wide = SPRING_COMPRESSED_W;
     gameImgs[7].high = SPRING_COMPRESSED_H;
     gameImgs[7].texture = pic_elem.spring_compressed;
+
     gameImgs[8].type = SPRING_OR_PROPELLER;
     gameImgs[8].num = 2;
     gameImgs[8].wide = SPRING_FULL_W;
     gameImgs[8].high = SPRING_FULL_H;
     gameImgs[8].texture = pic_elem.spring_full;
+
     gameImgs[9].type = SPRING_OR_PROPELLER;
     gameImgs[9].num = 3;
     gameImgs[9].wide = PROPELLER_W;
     gameImgs[9].high = PROPELLER_H;
     gameImgs[9].texture = pic_elem.propeller;
+
     gameImgs[10].type = SPRING_OR_PROPELLER;
     gameImgs[10].num = 4;
     gameImgs[10].wide = PROPELLER_RUNNING_W;
@@ -246,17 +252,18 @@ void initImage() {
     gameImgs[11].wide = DOODLE_W;
     gameImgs[11].high = DOODLE_H;
     gameImgs[11].texture = pic_elem.doodle;
+
     gameImgs[12].type = DOODLE;
     gameImgs[12].num = 2;
     gameImgs[12].wide = DOODLE_W;
     gameImgs[12].high = DOODLE_H;
     gameImgs[12].texture = pic_elem.doodle_right;
+
     gameImgs[13].type = DOODLE;
     gameImgs[13].num = 3;
     gameImgs[13].wide = DOODLE_UP_W;
     gameImgs[13].high = DOODLE_UP_H;
     gameImgs[13].texture = pic_elem.doodle_up;
-
 }
 
 void initRegs() {
