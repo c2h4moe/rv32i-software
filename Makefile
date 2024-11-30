@@ -1,4 +1,5 @@
-CC := riscv64-unknown-elf-g++
+CC := riscv64-unknown-elf-gcc
+CXX := riscv64-unknown-elf-g++
 LD := riscv64-unknown-elf-ld
 AR := riscv64-unknown-elf-ar
 OBJCOPY := riscv64-unknown-elf-objcopy
@@ -41,11 +42,11 @@ $(RUNTIME_DIR)/librv32iemu.a: $(RUNTIME_OBJS)
 	$(AR) -rc $@ $^
 
 runtime/_start.o : runtime/_start.S
-	$(CC) $(CFLAGS) -o $@ -c $^
+	$(CXX) $(CFLAGS) -o $@ -c $^
 
 $(OBJS): $(OBJ_DIR)/%.o: $(APP_DIR)/%.cpp $(RUNTIME_DIR)/librv32iemu.a
 	mkdir -p $(OBJ_DIR)
-	$(CC) $(CFLAGS) -o $@ -c $<
+	$(CXX) $(CFLAGS) -o $@ -c $<
 
 $(PROGRAMS): %: %.o runtime/_start.o
 	mkdir -p $(TARGET_DIR)

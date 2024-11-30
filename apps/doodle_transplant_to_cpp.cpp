@@ -1,5 +1,8 @@
-#include <basicio.h>
-#include "math.c"
+extern "C"{
+	#include "basicio.h"
+	#include "math.c"
+}
+
 
 #define headline 408  //中线高度
 #define DS 1		  //每帧下降的速度
