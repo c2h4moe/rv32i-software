@@ -2,14 +2,14 @@
 #include "basicio.h"
 #include "math.c"
 
-#define headline WINDOWH*0.4  //中线高度
+#define headline WINDOWH*2/5  //中线高度
 #define DS 1				  //每帧下降的速度
 #define LANDNUM 16   //不是一个界面中的地面数量，后台绘制游戏窗口和窗口上方一个窗口高度的地面
 #define STRINGNUM 4  //后台一共有多少个弹簧
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
 #define WINDOW_TOP (-jump_sum)
 #define LANDS_SPAN (2 * WINDOWH)                                //后台所有的地面所在的一个范围内，绝对值，正数。
-#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 0.2 * WINDOWH)       //后台所有的地面从哪里开始回收
+#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + WINDOWH/5)       //后台所有的地面从哪里开始回收
 #define INTERVAL_LAND (LANDS_SPAN / LANDNUM)                    //每一个地面的间隔
 
 #define WINDOWH 1024
@@ -165,8 +165,8 @@ struct landclass
     // 无其他变量
     // bluelandclass();
     // 每个蓝砖生成时产生一个方向变量 1或者-1
-	int direction = 2 * (rand() % 2) - 1;
-	int speed = rand() % (BLUELAND_DS - 1) + 2;
+	int direction = 2 * __modsi3(rand(), 2) - 1;
+	int speed = __modsi3(rand() , (BLUELAND_DS - 1)) + 2;
     // fragilelandclass();
 	bool broken = FALSE;
 	int broken_t = 0; //距离破碎的时间
