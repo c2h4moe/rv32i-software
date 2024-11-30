@@ -499,7 +499,7 @@ Simple_CPU::Simple_CPU(const char *src) : pc{0}, next_pc{0x8000000}, mem_we{0}, 
                                           reg_din{0}, halt{0}
 {
     regfile.assign(32, 0);
-    ROM.assign(1024, 0);
+    ROM.assign(4096, 0);
     std::ifstream file(src);
     std::string inst;
     int size = 0;
