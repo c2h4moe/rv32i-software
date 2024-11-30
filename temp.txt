@@ -1,1 +1,2 @@
 ./doodle_emulator ./target/doodle_keyboard_rom.hex ./target/doodle_keyboard_ram.hex
+./doodle_emulator ./target/doodle_transplant_to_cpp_rom.hex ./target/doodle_transplant_to_cpp_ram.hex

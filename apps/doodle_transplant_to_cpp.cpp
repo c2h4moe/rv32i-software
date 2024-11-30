@@ -144,7 +144,7 @@ struct playerclass
 
 	int pos_x;
 	int pos_y;
-	//上一次的起跳情况，1是普通跳，2是弹簧跳,3是正在飞行！
+	//上一次的起跳情况，1是普通跳，2是弹簧跳，3是正在飞行！
 	int jump_status;
 	///jump_from_y记录上次玩家起跳的位置，这个变量用于规划玩家的跳跃运动轨迹。
 	int jump_from_y;
@@ -190,7 +190,7 @@ struct landclass
 //弹簧类
 struct stringlandclass
 {
-    void show(int sum = 0,int index = 0);
+    void show(int sum = 0, int index = 0);
 	///当判断出发生碰撞时调用。
 	void contact();
 	///这个函数返回是否与地面发生碰撞。
@@ -274,13 +274,13 @@ void playerclass::adjust_y_by_jumping_status()
 	switch (jump_status)
 	{
 	case 1:
-		pos_y = jump_from_y - (__mulsi3(V,t) - __mulsi3(t,t));
+		pos_y = jump_from_y - (V * t - t * t);
 		break;
 	case 2:
-		pos_y = jump_from_y - (__mulsi3(STRING_V,t) - __mulsi3(t,t));
+		pos_y = jump_from_y - (STRING_V * t - t * t);
 		break;
 	case 3:
-		ds = __divsi3(FLYING_T - flying_t , 8);
+		ds = (FLYING_T - flying_t) / 8;
 		if (ds > V)
 		{
 			pos_y -= ds;
@@ -419,9 +419,13 @@ void stringlandclass::show(int sum, int index)
 	pos_y = base->pos_y - 20;
 	//如果弹簧被触发了
 	if (triggerd)
+	{
 		change_vram(TOOL, index, SPRING_COMPRESSED, pos_x, pos_y + sum);
+	}
 	else
+	{
 		change_vram(TOOL, index, SPRING_FULL, pos_x, pos_y + sum);
+	}
 	return;
 }
 //当弹簧发生碰撞时（被触发时）
@@ -612,8 +616,8 @@ void create_rocket(landclass* base_land)
 //初始化角色数据。
 void initplayer()
 {
-	player.set(__divsi3(WINDOWW, 5), __divsi3(__mulsi3(WINDOWH, 4), 5) - jump_sum, RIGHT);
-	player.adjust_jumping_status(3);
+	player.set(WINDOWW/5, ((WINDOWH*4)/5-jump_sum), RIGHT);
+	player.adjust_jumping_status(1);
 	player.t = 0;
 	return;
 }
@@ -624,19 +628,19 @@ void initlands()
 	int land_x, land_y;
 	for (int i = 0; i < LANDNUM; i++)
 	{
-		seed = __modsi3(rand(), 3000);
+		seed = rand() % 3000;
 		///land_x指当前这一块地随机生成的x坐标，505=620-115地图宽减去地砖长。
-		land_x = __modsi3(seed, (WINDOWW-115));
+		land_x = seed % (WINDOWW - 115);
 		///land_y指当前这一块地随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成。
-		land_y = LANDS_SPAN_BOTTOM - __mulsi3(i, INTERVAL_LAND);
+		land_y = LANDS_SPAN_BOTTOM -  i * INTERVAL_LAND;
 		///生成绿色地面。
         lands[i].live = TRUE;
 		lands[i].pos_x = land_x;
 		lands[i].pos_y = land_y;
-		if (seed < 1800)
+		if (seed < 2000)
 		{
 			lands[i].type = GREENLAND;
-			if (__modsi3(seed, 5) == 1 && i > 4)
+			if (seed % 5 == 1 && i > 4)
 			{
 				create_a_string(&lands[i]);
 			}
@@ -673,14 +677,13 @@ void initlands()
 	the_top_land_index = LANDNUM - 1;
 	return;
 }
-
 //初始化所有的全局变量
 void initglobal_variable()
 {
 	jump_sum = 0;
 	the_top_land_index = 0;
 	the_highest_solid_land_index = 0;
-	the_bottom_land_index=0;
+	the_bottom_land_index = 0;
 	last_t_bottom_y = 0;
 	dead_time = -1;
 	return;
@@ -743,7 +746,7 @@ void refresh_all_elements()
 		lands[the_bottom_land_index].pos_x = land_x;
 		lands[the_bottom_land_index].pos_y = land_y;
 		//生成绿色地面
-		if (__modsi3(seed, 100) < 30)
+		if (__modsi3(seed, 100) < 50)
 		{
 			lands[the_bottom_land_index].type = GREENLAND;
 			if (__modsi3(seed, 10) == 0)
@@ -773,7 +776,7 @@ void refresh_all_elements()
 			continue;
 		}
 		//生成蓝色地面
-		if (__modsi3(seed, 100) < 40)
+		if (__modsi3(seed, 100) < 75)
 		{
 			lands[the_bottom_land_index].type = BLUELAND;
 			if (__modsi3(seed, 5) == 1)
@@ -803,16 +806,9 @@ void refresh_all_elements()
 			continue;
 		}
 		//生成易碎地面
-		if (__modsi3(seed, 100) < 65)
+		if (__modsi3(seed, 100) < 100)
 		{
 			lands[the_bottom_land_index].type = FRAGILELAND;
-			the_bottom_land_index = __modsi3((++the_bottom_land_index), LANDNUM);
-			continue;
-		}
-		//生成空地面（地面基类）
-		else
-		{
-			lands[the_bottom_land_index].type = INVALID;
 			the_bottom_land_index = __modsi3((++the_bottom_land_index), LANDNUM);
 			continue;
 		}
@@ -843,14 +839,14 @@ void draw_all_strings(int sum)
 		if (strings[i].pos_y > WINDOW_BOTTOM)
 			strings[i].live = FALSE;
 		if (strings[i].live == TRUE)
-			strings[i].show(jump_sum);
+			strings[i].show(jump_sum, i);
 	}
 	return;
 }
 //绘制当前界面所有的地面。并且将在地图下的标记为FALSE
 void draw_all_lands(int sum)
 {
-	//显示在窗口范围内的地砖live=TRUE,
+	//显示在窗口范围内的地砖live = TRUE,
 	for (int i = 0; i < LANDNUM; i++)
 	{
 		//如果地砖已经在地图底下的话那就关掉live，不显示了，也不判断碰撞
@@ -859,9 +855,9 @@ void draw_all_lands(int sum)
 			lands[i].live = FALSE;
 		}
 		//只输出所有TRUE，即应该显示的砖块
-		if (lands[i].live==TRUE)
+		if (lands[i].live == TRUE)
 		{
-			lands[i].show(jump_sum);
+			lands[i].show(jump_sum, i);
 		}
 	}
 	return;
@@ -883,19 +879,6 @@ void draw_rocket(int sum)
 	}
 	return;
 }
-
-//绘制所有底层UI，如背景
-void draw_background_UI(int sum = 0)
-{
-	return;
-}
-
-//绘制所有上层UI，如计分。
-void draw_upper_UI(int sum = 0)
-{
-	return;
-}
-
 //用于读取用户的键盘与鼠标输入。还有子弹的生成也在其中。
 void player_control()
 {		
@@ -918,8 +901,7 @@ void player_control()
 	}
 	return;
 }
-
-///这个是初始化游戏变量的函数，如初始化角色
+//这个是初始化游戏变量的函数，如初始化角色
 void initgame()
 {
 	delete_all_lands();
@@ -932,8 +914,7 @@ void initgame()
 	initstrings();
 	initlands();
 }
-
-///调用后判断玩家是不是挂了（掉出屏幕），然后再指向对应操作
+//调用后判断玩家是不是挂了（掉出屏幕），然后再指向对应操作
 void if_player_dead()
 {
 	int base_x;
@@ -968,42 +949,33 @@ void if_player_dead()
 	return;
 }
 
-///这个函数的目的是绘制一帧当前的游戏界面
-void draw_game_window() 
-{
-	//绘制UI
-	draw_background_UI();
-	//玩家对象又运行了一帧，让其时间自增
-	++player;
-	//检测是否有键盘输入，修改玩家的坐标位置，以及判断是否要发生子弹
-	player_control();
-	//调整y
-	player.adjust_y_by_jumping_status();
-	//判断是否与火箭碰撞。
-	contact_rocket();
-	//判断是否与弹簧或地面相碰撞。
-	on_string_or_land();
-	//player的高度y坐标只在jumping调用后修改，故y修改后我们开始刷新跳跃总高度
-	refresh_jump_sum();
-	//更新地面
-	refresh_all_elements();
-	//分别绘制不同对象
-	draw_all_lands(jump_sum);
-	draw_all_strings(jump_sum);
-	draw_rocket(jump_sum);
-	player.show(jump_sum);
-	//绘制得分UI
-	draw_upper_UI(jump_sum);
-	//判断玩家是否死亡
-	if_player_dead();
-}
 int main() 
 {
 	seed(114514);
 	initgame();
 	while (1)
 	{
-		draw_game_window();
+		//分别绘制不同对象
+		draw_all_lands(jump_sum);
+		draw_all_strings(jump_sum);
+		draw_rocket(jump_sum);
+		player.show(jump_sum);
+		//玩家对象又运行了一帧，让其时间自增
+		++player;
+		//检测是否有键盘输入，修改玩家的坐标位置，以及判断是否要发生子弹
+		player_control();
+		//调整y
+		player.adjust_y_by_jumping_status();
+		//判断是否与火箭碰撞。
+		contact_rocket();
+		//判断是否与弹簧或地面相碰撞。
+		on_string_or_land();
+		//player的高度y坐标只在jumping调用后修改，故y修改后我们开始刷新跳跃总高度
+		refresh_jump_sum();
+		//更新地面
+		refresh_all_elements();
+		//判断玩家是否死亡
+		if_player_dead();
 	}
 	return 0;
 }
