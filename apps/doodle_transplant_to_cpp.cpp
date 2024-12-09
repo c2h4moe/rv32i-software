@@ -1,6 +1,7 @@
 extern "C"{
 	#include "basicio.h"
 	#include "math.c"
+	#include "debug.h"
 }
 
 

@@ -424,7 +424,7 @@ int mmio_read(int addr)
     switch (upper)
     {
     case 0:
-        return 0;
+        return ram[(addr >> 2) & 1023];;
         break;
     case 1:
         return 0;
@@ -480,6 +480,7 @@ void mmio_write(int addr, int din)
         timebegin = std::chrono::high_resolution_clock::now();
         break;
     case 0xbee:
+        std::cerr<<static_cast<char>(din);
         break;
     default:
         break;
@@ -515,7 +516,9 @@ void Simple_CPU::eval()
         exit(0);
     }
     pc = next_pc;
-    int inst = ROM[(pc & 0xfff) >> 2];
+    printf("0x%x\n",pc);
+    
+    int inst = ROM[(pc & 0x7ffffff) >> 2];
     int opcode = (inst >> 2) & 0b11111;
     int funct3 = (inst >> 12) & 0b111;
     int rs0 = (inst >> 15) & 0b11111;

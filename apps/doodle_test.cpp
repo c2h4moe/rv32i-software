@@ -1,4 +1,6 @@
-#include "basictime.h"
+extern "C" {
+    #include "basictime.h"
+}
 #define DOODLE_REGS_BASE (0x300000)
 #define M_DOODLE_REGS(n, id, x, y) *((volatile int*)(DOODLE_REGS_BASE + ((n) << 2))) = (((id) << 22) | ((x) << 11) | (y))
 typedef enum{

@@ -6,14 +6,14 @@ MEMORY
 SECTIONS
 {
     . = 0x0000;
-    .data : { *(.rodata .rodata.*)
-              *(.data .data.*)
+    .data : { *(.rodata .rodata.* .rdata .gnu.linkonce.r.*)
+              *(.data .data.* .srodata* .gnu.linkonce.d.*)
               *(.sdata .sdata.*)
-              *(.bss .bss.*)
+              *(.bss .bss.* .gnu.linkonce.b.*)
               *(.sbss .sbss.*) } > ram
 
     . = 0x8000000;
     .text : { runtime/_start.o(.text)
-              *(.text, .text.*) } > rom
+              *(.text, .text.* .gnu.linkonce.t.*) } > rom
 }
 ENTRY(_start)
