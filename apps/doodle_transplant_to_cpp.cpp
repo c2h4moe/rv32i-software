@@ -1,5 +1,5 @@
 extern "C"{
-	#include "basicio.h"
+	#include "gameio.h"
 	#include "math.c"
 	#include "debug.h"
 }
