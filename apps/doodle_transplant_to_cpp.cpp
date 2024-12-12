@@ -9,7 +9,6 @@ extern "C"{
 #define LANDNUM 16    //不是一个界面中的地面数量，后台绘制游戏窗口和窗口上方一个窗口高度的地面
 #define STRINGNUM 4   //后台一共有多少个弹簧
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
-#define WINDOW_TOP (-jump_sum)
 #define LANDS_SPAN (2 * WINDOWH)                      //后台所有的地面所在的一个范围内，绝对值，正数。
 #define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 205)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
 #define INTERVAL_LAND (LANDS_SPAN / LANDNUM)          //每一个地面的间隔
@@ -25,10 +24,10 @@ extern "C"{
 
 #define time_for_a_jump 80      //使用多少帧完成一次完整跳跃
 #define V 80                    //普通起跳初速度，四分之一的总用帧乘以V即一次起跳最大上升高度/像素
-#define STRING_V 150             //弹簧起跳的初速度
+#define STRING_V 150            //弹簧起跳的初速度
 #define JUMP_HEIGHT (V * 20)           //一次起跳最大上升高度/像素
-#define BLUELAND_DS 7           					//蓝色砖块的最大移动速度,别小于2！
-#define FRAGILELAND_DS 8        					//易碎砖块的下降速度
+#define BLUELAND_DS 7           	   //蓝色砖块的最大移动速度,别小于2！
+#define FRAGILELAND_DS 8        	   //易碎砖块的下降速度
 #define FLYING_T 200
 
 #define BALL_W 15
@@ -371,7 +370,9 @@ bool landclass::is_contact(int last_t_bottom_y,int player_bottom_x,int player_bo
 }
 //显示地面
 void landclass::show(int sum, int index)
-{
+{	
+	change_vram(PLATFORM, index, GREEN_PLATFORM, pos_x, pos_y + sum);
+	return;
     if (type == GREENLAND)
     {
 		change_vram(PLATFORM, index, GREEN_PLATFORM, pos_x, pos_y + sum);
@@ -629,11 +630,11 @@ void initlands()
 	for (int i = 0; i < LANDNUM; i++)
 	{
 		seed = rand() % 3000;
-		///land_x指当前这一块地随机生成的x坐标，505=620-115地图宽减去地砖长。
+		//land_x指当前这一块地随机生成的x坐标，505=620-115地图宽减去地砖长。
 		land_x = seed % (WINDOWW - 115);
-		///land_y指当前这一块地随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成。
+		//land_y指当前这一块地随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成。
 		land_y = LANDS_SPAN_BOTTOM -  i * INTERVAL_LAND;
-		///生成绿色地面。
+		//生成绿色地面。
         lands[i].live = TRUE;
 		lands[i].pos_x = land_x;
 		lands[i].pos_y = land_y;
