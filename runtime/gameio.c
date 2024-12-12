@@ -34,8 +34,8 @@ int getchark(){
         if (scan_code == 0xF0){
             curState = BREAK;
         } else {
-            if(scan_code == 0x74){  // left direction
-                res = 3;
+            if(scan_code == 0x74){  // right direction
+                res = 4;
             }else {
                 curState = IDLE;
             }
