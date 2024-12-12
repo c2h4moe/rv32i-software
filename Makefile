@@ -4,7 +4,7 @@ LD := riscv64-unknown-elf-ld
 AR := riscv64-unknown-elf-ar
 OBJCOPY := riscv64-unknown-elf-objcopy
 
-CFLAGS := -O2 -nostdlib -ffreestanding -fno-builtin -march=rv32i -mabi=ilp32 -I./runtime/
+CFLAGS := -O2 -Wall -nostdlib -ffreestanding -fno-builtin -march=rv32i -mabi=ilp32 -I./runtime/
 LDFLAGS :=  -m elf32lriscv -T linker.ld
 APP_DIR := apps
 OBJ_DIR := build
@@ -33,7 +33,7 @@ CFLAGS += -D SIM_MODE
 endif
 
 simulator:
-	g++ -O3 -o doodle_emulator doodle_emulator.cpp `sdl2-config --cflags --libs` -lSDL2_image
+	g++ -Ofast -Wall -o doodle_emulator doodle_emulator.cpp `sdl2-config --cflags --libs` -lSDL2_image
 
 $(RUNTIME_OBJS) : %.o: %.c
 	$(CC) $(CFLAGS) -o $@ -c $^

@@ -74,8 +74,7 @@ int game_buf = 0;
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 
-
-int ram[1024]; // simulate RAM
+int ram[4000000]; // simulate RAM
 std::vector<std::string> ascii_shape;
 int cycle = 0;
 int sleepstate = 0;
@@ -195,7 +194,7 @@ void initImage() {
 
     gameImgs[2].type = FAKE_PLATFORM;
     gameImgs[2].num = 1;
-    gameImgs[2].wide = BROWN_PLATFORM_BREAKING_1_H;
+    gameImgs[2].wide = BROWN_PLATFORM_BREAKING_1_W;
     gameImgs[2].high = BROWN_PLATFORM_BREAKING_1_H;
     gameImgs[2].texture = pic_elem.brown_platform_breaking_1;
 
@@ -424,7 +423,7 @@ int mmio_read(int addr)
     switch (upper)
     {
     case 0:
-        return 0;
+        return ram[(addr & 0xfffff) >> 2];;
         break;
     case 1:
         return 0;
@@ -461,7 +460,7 @@ void mmio_write(int addr, int din)
     switch (upper)
     {
     case 0:
-        ram[(addr >> 2) & 1023] = din;
+        ram[(addr & 0xfffff) >> 2] = din; // 支持1MiB寻址
         break;
     case 1:
         break;
@@ -480,6 +479,7 @@ void mmio_write(int addr, int din)
         timebegin = std::chrono::high_resolution_clock::now();
         break;
     case 0xbee:
+        std::cerr<<static_cast<char>(din);
         break;
     default:
         break;
@@ -505,6 +505,7 @@ Simple_CPU::Simple_CPU(const char *src) : pc{0}, next_pc{0x8000000}, mem_we{0}, 
     int size = 0;
     while (file >> inst)
     {
+        std::cout<<inst<<std::endl;
         ROM[size++] = std::stoll(inst, nullptr, 16);
     }
     file.close();
@@ -512,10 +513,11 @@ Simple_CPU::Simple_CPU(const char *src) : pc{0}, next_pc{0x8000000}, mem_we{0}, 
 void Simple_CPU::eval()
 {
     if(halt == 1) {
-        exit(0);
+        return;
     }
     pc = next_pc;
-    int inst = ROM[(pc & 0xfff) >> 2];
+    
+    int inst = ROM[(pc & 0x3fff) >> 2]; // 最多支持4096条指令
     int opcode = (inst >> 2) & 0b11111;
     int funct3 = (inst >> 12) & 0b111;
     int rs0 = (inst >> 15) & 0b11111;
@@ -749,6 +751,7 @@ void Simple_CPU::eval()
 }
 void init_mem(const char *ram_file)
 {
+    memset(ram,0,sizeof(ram));
     std::ifstream file(ram_file);
     std::string elem;
     int size = 0;

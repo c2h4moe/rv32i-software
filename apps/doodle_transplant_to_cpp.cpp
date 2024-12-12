@@ -1,6 +1,7 @@
 extern "C"{
-	#include "basicio.h"
+	#include "gameio.h"
 	#include "math.c"
+	#include "debug.h"
 }
 
 
@@ -371,8 +372,6 @@ bool landclass::is_contact(int last_t_bottom_y,int player_bottom_x,int player_bo
 //显示地面
 void landclass::show(int sum, int index)
 {	
-	change_vram(PLATFORM, index, GREEN_PLATFORM, pos_x, pos_y + sum);
-	return;
     if (type == GREENLAND)
     {
 		change_vram(PLATFORM, index, GREEN_PLATFORM, pos_x, pos_y + sum);
