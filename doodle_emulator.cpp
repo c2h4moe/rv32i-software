@@ -74,7 +74,6 @@ int game_buf = 0;
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 
-int c = 0xfffff;
 int ram[4000000]; // simulate RAM
 std::vector<std::string> ascii_shape;
 int cycle = 0;
@@ -195,7 +194,7 @@ void initImage() {
 
     gameImgs[2].type = FAKE_PLATFORM;
     gameImgs[2].num = 1;
-    gameImgs[2].wide = BROWN_PLATFORM_BREAKING_1_H;
+    gameImgs[2].wide = BROWN_PLATFORM_BREAKING_1_W;
     gameImgs[2].high = BROWN_PLATFORM_BREAKING_1_H;
     gameImgs[2].texture = pic_elem.brown_platform_breaking_1;
 
