@@ -6,7 +6,7 @@ extern "C"{
 
 
 #define headline 408  //中线高度
-#define DS 1		  //每帧下降的速度
+#define DS 50		  //左右移动速度
 #define LANDNUM 16    //不是一个界面中的地面数量，后台绘制游戏窗口和窗口上方一个窗口高度的地面
 #define STRINGNUM 4   //后台一共有多少个弹簧
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
@@ -24,15 +24,16 @@ extern "C"{
 #define TRUE 1
 
 #define time_for_a_jump 80      //使用多少帧完成一次完整跳跃
-#define V 80                    //普通起跳初速度，四分之一的总用帧乘以V即一次起跳最大上升高度/像素
+#define V 60                    //普通起跳初速度，四分之一的总用帧乘以V即一次起跳最大上升高度/像素
 #define STRING_V 150            //弹簧起跳的初速度
 #define JUMP_HEIGHT (V * 20)           //一次起跳最大上升高度/像素
-#define BLUELAND_DS 7           	   //蓝色砖块的最大移动速度,别小于2！
+#define BLUELAND_DS 20           	   //蓝色砖块的最大移动速度
 #define FRAGILELAND_DS 8        	   //易碎砖块的下降速度
 #define FLYING_T 200
 
 #define BALL_W 15
 #define BALL_H 15
+#define PLATFORM_W 90
 #define BROWN_PLATFORM_BREAKING_1_W 90
 #define BROWN_PLATFORM_BREAKING_1_H 23
 #define BROWN_PLATFORM_BREAKING_2_W 90
@@ -180,8 +181,8 @@ struct landclass
     // 无其他变量
     // bluelandclass();
     // 每个蓝砖生成时产生一个方向变量 1或者-1
-	int direction = __mulsi3(2, (__modsi3(rand(), 2))) - 1;
-	int speed = __modsi3(rand(), BLUELAND_DS-1) + 2;
+	int direction = 2 *(rand() % 2) - 1;
+	int speed = rand() % (BLUELAND_DS-1) + 2;
     // fragilelandclass();
 	bool broken = FALSE;
 	int broken_t = 0; //距离破碎的时间
@@ -238,22 +239,22 @@ playerclass& playerclass::operator++()
 //bottom_x是判断玩家是否与地面接触的底部x点坐标
 int playerclass::bottom_x()
 {
-	return pos_x + 52;
+	return pos_x;
 }
 //bottom_y是判断玩家是否与地面接触的底部y点坐标
 int playerclass::bottom_y()
 {
-	return pos_y + 116;
+	return pos_y + 80;
 }
 //contact_x是判断玩家是否与物品接触的x点坐标
 int playerclass::contact_x()
 {
-	return pos_x + 65;
+	return pos_x;
 }
 //contact_y是判断玩家是否与物品接触的y点坐标
 int playerclass::contact_y()
 {
-	return pos_y + 60;
+	return pos_y;
 }
 //初始设置设置玩家的新x，y坐标，以及人物状态
 void playerclass::set(int nx, int ny, PLAYER_STATUS ns)
@@ -270,7 +271,7 @@ void playerclass::adjust_y_by_jumping_status()
 {
 	int ds;
 	//根据上一次的起跳情况调节高度变化
-	//这里有个坑！坐标要减去跳跃量!画布上的是y反的！
+	//这里有个坑：坐标要减去跳跃量
 	switch (jump_status)
 	{
 	case 1:
@@ -290,6 +291,7 @@ void playerclass::adjust_y_by_jumping_status()
 			this->adjust_jumping_status(1);
 			flying_t = -1;
 		}
+		break;
 	default:
 		break;
 	}
@@ -408,14 +410,16 @@ void landclass::show(int sum, int index)
 void landclass::contact()
 {
     if(type == FRAGILELAND)
+	{
         broken = TRUE;
+	}
 	return;
 }
 ///显示弹簧
 void stringlandclass::show(int sum, int index)
 {
 	//跟随基地面移动
-	pos_x = base->pos_x + 18 + relative_x;
+	pos_x = base->pos_x + relative_x;
 	pos_y = base->pos_y - 20;
 	//如果弹簧被触发了
 	if (triggerd)
@@ -463,7 +467,7 @@ void rocketclass::show(int sum)
 			base_x = pos_x;
 			falling_t = 0;
 		}
-		pos_y = base_y - (__mulsi3(8, falling_t) - __mulsi3(falling_t, falling_t));
+		pos_y = base_y - (8 * falling_t - falling_t * falling_t);
 		pos_x = pos_x + 3 * ((base_x % 2) * 2 - 1);
 		change_vram(TOOL, 0, PROPELLER_RUNNING, pos_x, pos_y + sum);
 		falling_t++;
@@ -478,7 +482,7 @@ void rocketclass::show(int sum)
 
 bool rocketclass::is_contact(int x, int y)
 {
-	if (x >= pos_x - 20 && x < pos_x + 50 + 20 && y > pos_y-40 && y < pos_y + 73 + 20)
+	if (x >= pos_x - 20 && x < pos_x + 50 + 20 && y > pos_y - 40 && y < pos_y + 73 + 20)
 	{
 		return TRUE;
 	}
@@ -510,7 +514,7 @@ void contact_rocket()
         rocket.is_contact(player.contact_x(), player.contact_y()))
 	{
 		rocket.base_player = &player;
-		rocket.live == FALSE;
+		rocket.live = FALSE;
 		player.adjust_jumping_status(3);
 	}
 	return;
@@ -591,8 +595,8 @@ void create_a_string(landclass* base_land)
 			strings[i].live = TRUE;
 			strings[i].triggerd = FALSE;
 			strings[i].base = base_land;
-			strings[i].relative_x = __modsi3(rand(),58);
-			strings[i].pos_x = base_land->pos_x + 18 + strings[i].relative_x;
+			strings[i].relative_x = rand() % 10;
+			strings[i].pos_x = base_land->pos_x + strings[i].relative_x;
 			strings[i].pos_y = base_land->pos_y - 20;
 			return;
 		}
@@ -629,11 +633,11 @@ void initlands()
 	for (int i = 0; i < LANDNUM; i++)
 	{
 		seed = rand() % 3000;
-		//land_x指当前这一块地随机生成的x坐标，505=620-115地图宽减去地砖长。
-		land_x = seed % (WINDOWW - 115);
-		//land_y指当前这一块地随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成。
+		//land_x指当前地面随机生成的x坐标 注意平台长度
+		land_x = seed % (WINDOWW - PLATFORM_W) + PLATFORM_W/2;
+		//land_y指当前地面随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成。
 		land_y = LANDS_SPAN_BOTTOM -  i * INTERVAL_LAND;
-		//生成绿色地面。
+		//生成地面
         lands[i].live = TRUE;
 		lands[i].pos_x = land_x;
 		lands[i].pos_y = land_y;
@@ -660,20 +664,20 @@ void initlands()
 			}
 			continue;
 		}
-		///生成脆弱地面
+		//生成脆弱地面
 		else if (seed < 2500)
 		{
 			lands[i].type = FRAGILELAND;
 			continue;
 		}
-		///生成空地面（地面基类）
+		//生成空地面
 		else
 		{
 			lands[i].type = INVALID;
 			continue;
 		}
 	}
-	//将最后生成的那一个定义为目前最高的地面
+	//将最后生成的定义为目前最高的地面
 	the_top_land_index = LANDNUM - 1;
 	return;
 }
@@ -692,7 +696,9 @@ void initglobal_variable()
 void initstrings()
 {
 	for (int i = 0; i < STRINGNUM; i++)
+	{
 		strings[i].live = FALSE;
+	}
 	return;
 }
 //初始化火箭
@@ -714,31 +720,33 @@ void initrocket()
 void delete_all_strings()
 {
 	for (int i = 0; i < STRINGNUM; i++)
+	{
         strings[i].live = FALSE;
+	}
 	return;
 }
 //一局结束后删掉所有的地面
 void delete_all_lands()
 {
 	for (int i = 0; i < LANDNUM; i++)
+	{
         lands[i].live = FALSE;
+	}
 	return;
 }
-//更新当前所有的地图元素。即将已经在屏幕下方（live=FALSE）的地图元素，重新在上方生成
+//更新当前所有的地图元素 即将已经在屏幕下方 live=FALSE 的地图元素 重新在上方生成
 void refresh_all_elements()
 {
 	int seed = 0;
 	int land_x, land_y;
-	// srand(unsigned(time(0)));//这个函数有一个巨坑！time返回的是秒！
-    // 但是你是每帧都调用一次srand！所以一秒内每一帧接收的种子都一样！一秒内生成的随机数都一样！
+	// srand(unsigned(time(0)));//这个函数有一个巨坑 time返回的是秒，所以你一秒内每一帧调用srand得到seed都是一样的
+
 	while (lands[the_top_land_index].pos_y > LANDS_SPAN_BOTTOM - LANDS_SPAN)
 	{
-		//如果你重复调用srand，一秒内的rand产生的第一个随机数都一样，下一秒rand产生的第一个
-		//数会只比上一秒产生的稍微大几而已，余了1000之后，导致seed几乎没有很大变化！
-		seed = __modsi3(rand(), 3000);
-		//land_x指当前这一块地随机生成的x坐标
-		land_x = __modsi3(seed, (WINDOWW - 115));
-		//land_y指当前这一块地随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成
+		seed = rand() % 3000;
+		//land_x指当前地面随机生成的x坐标
+		land_x = seed % (WINDOWW - PLATFORM_W) + PLATFORM_W/2;
+		//land_y指当前地面随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成
 		land_y = lands[the_top_land_index].pos_y - INTERVAL_LAND;
 		the_top_land_index = the_bottom_land_index;
         // 重新赋值
@@ -746,10 +754,10 @@ void refresh_all_elements()
 		lands[the_bottom_land_index].pos_x = land_x;
 		lands[the_bottom_land_index].pos_y = land_y;
 		//生成绿色地面
-		if (__modsi3(seed, 100) < 50)
+		if (seed % 100 < 50)
 		{
 			lands[the_bottom_land_index].type = GREENLAND;
-			if (__modsi3(seed, 10) == 0)
+			if (seed % 10 == 0)
 			{
 				create_a_string(&lands[the_bottom_land_index]);
 			}
@@ -766,20 +774,22 @@ void refresh_all_elements()
 				else
 				{
                     //如果没有超过玩家起跳高度那么说明上一个最高的实体方块肯定没有弹簧，可以生成火箭。
-					if (__modsi3(seed, 10) < 2) 
+					if (seed % 10 < 2)
+					{
                         create_rocket(&lands[the_highest_solid_land_index]);
+					}
 				}
 				//继续将之重置为上一个最高的实体方块。
 				the_highest_solid_land_index = the_bottom_land_index;
 			}
-			the_bottom_land_index = __modsi3((++the_bottom_land_index), LANDNUM);
+			the_bottom_land_index = (++the_bottom_land_index) % LANDNUM;
 			continue;
 		}
 		//生成蓝色地面
-		if (__modsi3(seed, 100) < 75)
+		if (seed % 100 < 75)
 		{
 			lands[the_bottom_land_index].type = BLUELAND;
-			if (__modsi3(seed, 5) == 1)
+			if (seed % 5 == 1)
 			{
 				create_a_string(&lands[the_bottom_land_index]);
 			}
@@ -796,20 +806,20 @@ void refresh_all_elements()
 				else
 				{
                     //如果没有超过玩家起跳高度那么说明上一个最高的实体方块肯定没有弹簧，可以生成火箭
-					if (__modsi3(seed, 10) < 2)
+					if (seed % 10 < 2)
 						create_rocket(&lands[the_highest_solid_land_index]);
 				}
 				//继续将之重置为上一个最高的实体方块
 				the_highest_solid_land_index = the_bottom_land_index;
 			}
-			the_bottom_land_index = __modsi3((++the_bottom_land_index), LANDNUM);
+			the_bottom_land_index = (++the_bottom_land_index) % LANDNUM;
 			continue;
 		}
 		//生成易碎地面
-		if (__modsi3(seed, 100) < 100)
+		if (seed % 100 < 100)
 		{
 			lands[the_bottom_land_index].type = FRAGILELAND;
-			the_bottom_land_index = __modsi3((++the_bottom_land_index), LANDNUM);
+			the_bottom_land_index = (++the_bottom_land_index) % LANDNUM;
 			continue;
 		}
 	}
@@ -820,10 +830,11 @@ void refresh_jump_sum()
 {
 	if (player.pos_y < headline)
 	{
-		//jump_sum记为玩家y坐标小于400的最大差值
 		int temp = headline - player.pos_y;
 		if (temp > jump_sum)
+		{
 			jump_sum = temp;
+		}
 	}
 	return;
 }
@@ -884,19 +895,18 @@ void player_control()
 {		
 	// 监测键盘的输入
 	char ch = getchark();
-	if (ch == 'w' || ch == 's' || ch == 'a' || ch == 'd' ||
-		ch == 0x1 || ch == 0x2 || ch == 0x3 || ch == 0x4)
+	if (ch == 0x1 || ch == 0x2 || ch == 0x3 || ch == 0x4)
 	{
-		if (ch == 'a' || ch == 0x3)
+		if (ch == 0x3)
 		{
 			player.move(-DS, 0);
 		}
-		if (ch == 'd' || ch == 0x4)
+		if (ch == 0x4)
 		{
 			player.move(+DS, 0);
 		}
 		//如果没有按下左右方向键
-		if (!(ch == 'a' || ch == 'd'))	
+		if (!(ch == 0x3 || ch == 0x4))	
 			player.move(0, 0);
 	}
 	return;
@@ -917,11 +927,6 @@ void initgame()
 //调用后判断玩家是不是挂了（掉出屏幕），然后再指向对应操作
 void if_player_dead()
 {
-	int base_x;
-	int base_y;
-	base_x = WINDOWW / 2 - 212;
-	base_y = WINDOWH;
-
 	char ch = getchark();
 	if (dead_time >= 0 )
 	{
@@ -929,6 +934,7 @@ void if_player_dead()
 	}
 	if (player.bottom_y() > WINDOW_BOTTOM)
 	{
+		asm("ebreak");
 		//直接重置位置，纯纯开发人员专属无敌版。
 		//initplayer();
 		if (dead_time == -1)
@@ -949,16 +955,29 @@ void if_player_dead()
 	return;
 }
 
+void debug()
+{
+	while(1)
+	{
+		char ch = getchark();
+		if (ch == 0x1 || ch == 0x2 || ch == 0x3 || ch == 0x4)
+		{
+			break;
+		}
+	}
+}
+
 int main() 
 {
 	seed(114514);
 	initgame();
 	while (1)
 	{
+		debug();
 		//分别绘制不同对象
 		draw_all_lands(jump_sum);
-		draw_all_strings(jump_sum);
-		draw_rocket(jump_sum);
+		// draw_all_strings(jump_sum);
+		// draw_rocket(jump_sum);
 		player.show(jump_sum);
 		//玩家对象又运行了一帧，让其时间自增
 		++player;
