@@ -957,6 +957,7 @@ int main()
 	while (1)
 	{
 		//分别绘制不同对象
+		output("now player.pos_x = %d, pos_y = %d\n", player.pos_x, player.pos_y);
 		draw_all_lands(jump_sum);
 		draw_all_strings(jump_sum);
 		draw_rocket(jump_sum);
@@ -978,5 +979,7 @@ int main()
 		//判断玩家是否死亡
 		if_player_dead();
 	}
+	while(1){}
+
 	return 0;
 }
