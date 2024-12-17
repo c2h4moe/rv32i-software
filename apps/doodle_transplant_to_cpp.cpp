@@ -7,8 +7,8 @@ extern "C"{
 
 #define headline 408  //中线高度
 #define DS 50		  //左右移动速度
-#define LANDNUM 16    //不是一个界面中的地面数量，后台绘制游戏窗口和窗口上方一个窗口高度的地面
-#define STRINGNUM 4   //后台一共有多少个弹簧
+#define LANDNUM 16    //后台所有地面数量
+#define STRINGNUM 4   //后台所有弹簧数量
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
 #define LANDS_SPAN (2 * WINDOWH)                      //后台所有的地面所在的一个范围内，绝对值，正数。
 #define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 205)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
@@ -23,17 +23,18 @@ extern "C"{
 #define FALSE 0
 #define TRUE 1
 
-#define time_for_a_jump 80      //使用多少帧完成一次完整跳跃
+#define time_for_a_jump 60      //使用多少帧完成一次完整跳跃
 #define V 60                    //普通起跳初速度，四分之一的总用帧乘以V即一次起跳最大上升高度/像素
-#define STRING_V 150            //弹簧起跳的初速度
+#define STRING_V 120            //弹簧起跳的初速度
 #define JUMP_HEIGHT (V * 20)           //一次起跳最大上升高度/像素
 #define BLUELAND_DS 20           	   //蓝色砖块的最大移动速度
 #define FRAGILELAND_DS 8        	   //易碎砖块的下降速度
-#define FLYING_T 200
+#define FLYING_V 180
 
 #define BALL_W 15
 #define BALL_H 15
 #define PLATFORM_W 90
+#define PLATFORM_H 23
 #define BROWN_PLATFORM_BREAKING_1_W 90
 #define BROWN_PLATFORM_BREAKING_1_H 23
 #define BROWN_PLATFORM_BREAKING_2_W 90
@@ -127,8 +128,9 @@ enum RoleKind
 };
 
 //玩家类
-struct playerclass
+class playerclass
 {
+public:
 	//设置玩家的新x，y坐标，以及人物状态
 	void set(int nx, int ny, PLAYER_STATUS ns);
 	//增减玩家x，y坐标的函数
@@ -147,84 +149,92 @@ struct playerclass
 	int pos_y;
 	//上一次的起跳情况，1是普通跳，2是弹簧跳，3是正在飞行！
 	int jump_status;
-	///jump_from_y记录上次玩家起跳的位置，这个变量用于规划玩家的跳跃运动轨迹。
+	//jump_from_y记录上次玩家起跳的位置，这个变量用于规划玩家的跳跃运动轨迹。
 	int jump_from_y;
-	///bottom_x是判断玩家是否与地面接触的底部x点坐标
+	//bottom_x判断player和平台的x坐标接触
 	int bottom_x();
-	///bottom_y是判断玩家是否与地面接触的底部y点坐标
+	//bottom_y是判断player和平台的y坐标接触
 	int bottom_y();
-	///contact_x是判断玩家是否与物品接触的x点坐标
+	//contact_x是判断player与其他物品的x坐标接触
 	int contact_x();
-	///contact_y是判断玩家是否与物品接触的y点坐标
+	//contact_y是判断player与其他物品的y坐标接触
 	int contact_y();
 
 	PLAYER_STATUS status;
 	PLAYER_STATUS status_before_falling;
-	int flying_t = -1;	//这个是时间变量，记录开始飞行了多少帧。如果是-1说明没有起飞。
+	int flying_t;	//这个是时间变量，记录开始飞行了多少帧。如果是-1说明没有起飞。
 	int t;				//这个是时间变量，用于记录当前距离上一次起跳经过了多少帧
 };
 
 //基础地面类
-struct landclass
+class landclass
 {
-	int pos_x = 0;
-	int pos_y = 0;
-	bool live = FALSE;
-    LAND_TYPE type = INVALID;
+public:
+	int pos_x;
+	int pos_y;
+	bool live;
+    LAND_TYPE type;
     //显示地面
-    void show(int sum = 0, int index = 0);
+    void show(int sum, int index);
     //判断是否与玩家发生碰撞
     bool is_contact(int last_t_bottom_y, int player_bottom_x, int player_bottom_y);
-    //当判断出发生碰撞时调用
+    //碰撞回调函数
     void contact();
     // greenlandclass();
     // 无其他变量
     // bluelandclass();
     // 每个蓝砖生成时产生一个方向变量 1或者-1
-	int direction = 2 *(rand() % 2) - 1;
-	int speed = rand() % (BLUELAND_DS-1) + 2;
+	int direction;
+	int speed;
     // fragilelandclass();
-	bool broken = FALSE;
-	int broken_t = 0; //距离破碎的时间
+	bool broken;
+	int broken_t; //距离破碎的时间
 };
 
 //弹簧类
-struct stringlandclass
+class stringlandclass
 {
-    void show(int sum = 0, int index = 0);
-	///当判断出发生碰撞时调用。
+public:
+    void show(int sum, int index);
+	//当判断出发生碰撞时调用。
 	void contact();
-	///这个函数返回是否与地面发生碰撞。
+	//这个函数返回是否与地面发生碰撞。
 	bool is_contact(int last_t_bottom_y, int player_bottom_x, int player_bottom_y);
-	int pos_x = 0;
-	int pos_y = 0;
-	bool live = FALSE;
+	int pos_x;
+	int pos_y;
+	bool live;
     // -------------------------------------------------------------------
-	bool triggerd = FALSE;//是否已经被触发
-	landclass* base = nullptr;
-	int relative_x = 0;
+	bool triggerd;//是否已经被触发
+	landclass* base;
+	int relative_x;
 };
 
-///火箭道具,由于他是基于玩家类和地面类的
-struct rocketclass
+//火箭类
+class rocketclass
 {
+public:
 	void show(int sum);
 	bool is_contact(int x, int y);
 	int pos_x;
 	int pos_y;
-	int triggerd_t = -1;
+	int triggerd_t;
 	int base_y;
 	int base_x;
-	int falling_t = -1;
-	landclass* base = nullptr;
-	playerclass* base_player = nullptr;
-	bool live = FALSE;
+	int falling_t;
+	landclass* base;
+	playerclass* base_player;
+	bool live;
 };
 //-------------------------------------------------------------------------------
 // kind对应enum的物品类型 n对应在数组中的序号 id对应这类型中的图片编号 x y对应坐标
 void change_vram(int kind, int n, int id, int x, int y)
 {
-    *(volatile int*)(DOODLE_REGS_BASE + (kind << 6) + (n << 2)) = (id << 22) | (x << 11) | y;
+	// unsigned int xx = (unsigned int)x % WINDOWW;
+	// unsigned int yy = (unsigned int)y % WINDOWH;
+	int xx = x % WINDOWW;
+	int yy = y % WINDOWH;
+    *(volatile int*)(DOODLE_REGS_BASE + (kind << 6) + (n << 2)) = (id << 22) | (xx << 11) | yy;
+	// output("change_vram: kind = %d, n = %d, id = %d, x = %d, y = %d, xx = %d, yy = %d\n", kind, n, id, x, y, xx, yy);
 }
 //每调用一次为所有时间变量加一，即时间增加一帧
 playerclass& playerclass::operator++()
@@ -246,7 +256,7 @@ int playerclass::bottom_y()
 {
 	return pos_y + 80;
 }
-//contact_x是判断玩家是否与物品接触的x点坐标
+//contact_x是判断玩家是否与物品接触的x点坐标contact_x
 int playerclass::contact_x()
 {
 	return pos_x;
@@ -254,7 +264,7 @@ int playerclass::contact_x()
 //contact_y是判断玩家是否与物品接触的y点坐标
 int playerclass::contact_y()
 {
-	return pos_y;
+	return pos_y + 80;
 }
 //初始设置设置玩家的新x，y坐标，以及人物状态
 void playerclass::set(int nx, int ny, PLAYER_STATUS ns)
@@ -281,7 +291,7 @@ void playerclass::adjust_y_by_jumping_status()
 		pos_y = jump_from_y - (STRING_V * t - t * t);
 		break;
 	case 3:
-		ds = (FLYING_T - flying_t) / 8;
+		ds = FLYING_V - flying_t * 8;
 		if (ds > V)
 		{
 			pos_y -= ds;
@@ -300,22 +310,20 @@ void playerclass::adjust_y_by_jumping_status()
 //起跳函数，每次调用根据t和是否输入true来修改玩家当前的y值，注意！
 void playerclass::adjust_jumping_status(int jump_strength)
 {
-	if (jump_strength==1)
+	jump_from_y = pos_y;
+	if (jump_strength == 1)
 	{
 		t = 0;
-		jump_from_y = pos_y;
 		jump_status = 1;
 	}
 	else if (jump_strength == 2)
 	{
 		t = 0;
-		jump_from_y = pos_y;
 		jump_status = 2;
 	}
 	else if (jump_strength == 3)
 	{
 		flying_t = 0;
-		jump_from_y = pos_y;
 		jump_status = 3;
 	}
 	return;
@@ -324,9 +332,13 @@ void playerclass::adjust_jumping_status(int jump_strength)
 void playerclass::move(int dx, int dy) 
 {
 	if (dx < 0)
+	{
 		status = LEFT;
+	}
 	else if (dx > 0)
+	{
 		status = RIGHT;
+	}
 	pos_x += dx;
 	pos_y += dy;
 	//如果进入了屏幕两侧要可以从另外一侧出现
@@ -345,8 +357,6 @@ void playerclass::move(int dx, int dy)
 //在图中绘制一次角色
 void playerclass::show(int sum)
 {
-	//这个的目的是，如果t<10说明刚刚起跳,应该显示起跳动作，
-	//正好起跳状态是正常状态的下一位，所以这里加一是把状态转换为当前状态对应的起跳状态
 	switch (status)
 	{
 	case RIGHT:
@@ -386,7 +396,9 @@ void landclass::show(int sum, int index)
 			pos_x -= speed;
         //如果砖块撞到了屏幕两侧 则调换方向
         if (pos_x < 0 || pos_x > WINDOWW - BLUE_PLATFORM_W)
+		{
             direction = -direction;
+		}
 		change_vram(PLATFORM, index, BLUE_PLATFORM, pos_x, pos_y + sum);
     }
     else if (type == FRAGILELAND)
@@ -441,7 +453,7 @@ void stringlandclass::contact()
 bool stringlandclass::is_contact(int last_t_bottom_y, int player_bottom_x, int player_bottom_y)
 {
 	if ((last_t_bottom_y < pos_y) && (player_bottom_y >= pos_y)
-		&& (player_bottom_x >= pos_x - 28) && (player_bottom_x <= pos_x + 43))
+		&& (player_bottom_x >= pos_x - 20) && (player_bottom_x <= pos_x + SPRING_FULL_W + 20))
 	{
 		return TRUE;
 	}
@@ -459,20 +471,6 @@ void rocketclass::show(int sum)
 		change_vram(TOOL, 0, PROPELLER_RUNNING, pos_x, pos_y + sum);
 		return;
 	}
-	if (triggerd_t > 0)
-	{
-		if (falling_t < 0)
-		{
-			base_y = pos_y;
-			base_x = pos_x;
-			falling_t = 0;
-		}
-		pos_y = base_y - (8 * falling_t - falling_t * falling_t);
-		pos_x = pos_x + 3 * ((base_x % 2) * 2 - 1);
-		change_vram(TOOL, 0, PROPELLER_RUNNING, pos_x, pos_y + sum);
-		falling_t++;
-		return;
-	}
 	//跟随基地面移动
 	pos_x = base->pos_x + 21 + 10;
 	pos_y = base->pos_y - 70;
@@ -482,14 +480,12 @@ void rocketclass::show(int sum)
 
 bool rocketclass::is_contact(int x, int y)
 {
-	if (x >= pos_x - 20 && x < pos_x + 50 + 20 && y > pos_y - 40 && y < pos_y + 73 + 20)
+	if (x > pos_x - 20 && x < pos_x + PROPELLER_W + 20 
+	 && y > pos_y - PROPELLER_H - 20 && y < pos_y + 20)
 	{
 		return TRUE;
 	}
-	else
-	{
-		return FALSE;
-	}
+	return FALSE;
 }
 
 //-------------------------------------------------------------------------------
@@ -555,7 +551,7 @@ void on_land()
 			if (lands[i].type == GREENLAND)
 			{
                 //因为有可能上一帧在地面上，但是下一帧已经在地面下了
-                //不能从地面下其他，要将人物移动到地面
+                //不能从地面下起跳，要将player移动到地面
 				player.pos_y += (lands[i].pos_y - player.bottom_y());
 				player.adjust_jumping_status(1);
 				break;
@@ -595,9 +591,9 @@ void create_a_string(landclass* base_land)
 			strings[i].live = TRUE;
 			strings[i].triggerd = FALSE;
 			strings[i].base = base_land;
-			strings[i].relative_x = rand() % 10;
+			strings[i].relative_x = PLATFORM_W / 2 - SPRING_FULL_W / 2;
 			strings[i].pos_x = base_land->pos_x + strings[i].relative_x;
-			strings[i].pos_y = base_land->pos_y - 20;
+			strings[i].pos_y = base_land->pos_y - PLATFORM_H;
 			return;
 		}
 	}
@@ -623,6 +619,7 @@ void initplayer()
 	player.set(WINDOWW/5, ((WINDOWH*4)/5-jump_sum), RIGHT);
 	player.adjust_jumping_status(1);
 	player.t = 0;
+	player.flying_t = -1;
 	return;
 }
 //绘制初始界面的所有地面
@@ -634,14 +631,20 @@ void initlands()
 	{
 		seed = rand() % 3000;
 		//land_x指当前地面随机生成的x坐标 注意平台长度
-		land_x = seed % (WINDOWW - PLATFORM_W) + PLATFORM_W/2;
-		//land_y指当前地面随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成。
+		land_x = seed % (WINDOWW - PLATFORM_W);
+		//land_y指当前地面随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成
 		land_y = LANDS_SPAN_BOTTOM -  i * INTERVAL_LAND;
 		//生成地面
         lands[i].live = TRUE;
 		lands[i].pos_x = land_x;
 		lands[i].pos_y = land_y;
-		if (seed < 2000)
+		
+		lands[i].direction = 2 *(rand() % 2) - 1;
+		lands[i].speed = rand() % (BLUELAND_DS - 1) + 2;
+		lands[i].broken = FALSE;
+		lands[i].broken_t = 0;
+
+		if (seed < 1500)
 		{
 			lands[i].type = GREENLAND;
 			if (seed % 5 == 1 && i > 4)
@@ -659,22 +662,52 @@ void initlands()
 				{
 					create_a_string(&lands[the_highest_solid_land_index]);
 				}
+				else
+				{
+					//如果没有超过玩家起跳高度那么说明上一个最高的实体方块肯定没有弹簧，可以生成火箭。
+					if (seed % 10 < 2)
+					{
+						create_rocket(&lands[the_highest_solid_land_index]);
+					}
+				}
 				//继续将之重置为上一个最高的实体方块
 				the_highest_solid_land_index = i;
 			}
-			continue;
+		}
+		else if(seed < 2000)
+		{
+			lands[i].type = BLUELAND;
+			if (seed % 5 == 1 && i > 4)
+			{
+				create_a_string(&lands[i]);
+			}
+			else
+			{
+				if (lands[the_highest_solid_land_index].pos_y - land_y > JUMP_HEIGHT)
+				{
+					create_a_string(&lands[the_highest_solid_land_index]);
+				}
+				else
+				{
+					//如果没有超过玩家起跳高度那么说明上一个最高的实体方块肯定没有弹簧，可以生成火箭。
+					if (seed % 10 < 2)
+					{
+						create_rocket(&lands[the_highest_solid_land_index]);
+					}
+				}
+				//继续将之重置为上一个最高的实体方块。
+				the_highest_solid_land_index = i;
+			}
 		}
 		//生成脆弱地面
 		else if (seed < 2500)
 		{
 			lands[i].type = FRAGILELAND;
-			continue;
 		}
 		//生成空地面
 		else
 		{
 			lands[i].type = INVALID;
-			continue;
 		}
 	}
 	//将最后生成的定义为目前最高的地面
@@ -697,7 +730,12 @@ void initstrings()
 {
 	for (int i = 0; i < STRINGNUM; i++)
 	{
+		strings[i].pos_x = 0;
+		strings[i].pos_y = 0;
 		strings[i].live = FALSE;
+		strings[i].triggerd = FALSE;
+		strings[i].base = nullptr;
+		strings[i].relative_x = 0;
 	}
 	return;
 }
@@ -739,13 +777,13 @@ void refresh_all_elements()
 {
 	int seed = 0;
 	int land_x, land_y;
-	// srand(unsigned(time(0)));//这个函数有一个巨坑 time返回的是秒，所以你一秒内每一帧调用srand得到seed都是一样的
+	
 
 	while (lands[the_top_land_index].pos_y > LANDS_SPAN_BOTTOM - LANDS_SPAN)
 	{
 		seed = rand() % 3000;
 		//land_x指当前地面随机生成的x坐标
-		land_x = seed % (WINDOWW - PLATFORM_W) + PLATFORM_W/2;
+		land_x = seed % (WINDOWW - PLATFORM_W);
 		//land_y指当前地面随机生成的y坐标，初始化时地图高度分成地面数份逐份向上生成
 		land_y = lands[the_top_land_index].pos_y - INTERVAL_LAND;
 		the_top_land_index = the_bottom_land_index;
@@ -782,7 +820,7 @@ void refresh_all_elements()
 				//继续将之重置为上一个最高的实体方块。
 				the_highest_solid_land_index = the_bottom_land_index;
 			}
-			the_bottom_land_index = (++the_bottom_land_index) % LANDNUM;
+			the_bottom_land_index = (the_bottom_land_index + 1) % LANDNUM;
 			continue;
 		}
 		//生成蓝色地面
@@ -812,14 +850,14 @@ void refresh_all_elements()
 				//继续将之重置为上一个最高的实体方块
 				the_highest_solid_land_index = the_bottom_land_index;
 			}
-			the_bottom_land_index = (++the_bottom_land_index) % LANDNUM;
+			the_bottom_land_index = (the_bottom_land_index + 1) % LANDNUM;
 			continue;
 		}
 		//生成易碎地面
 		if (seed % 100 < 100)
 		{
 			lands[the_bottom_land_index].type = FRAGILELAND;
-			the_bottom_land_index = (++the_bottom_land_index) % LANDNUM;
+			the_bottom_land_index = (the_bottom_land_index + 1) % LANDNUM;
 			continue;
 		}
 	}
@@ -861,7 +899,7 @@ void draw_all_lands(int sum)
 	for (int i = 0; i < LANDNUM; i++)
 	{
 		//如果地砖已经在地图底下的话那就关掉live，不显示了，也不判断碰撞
-		if(lands[i].pos_y > WINDOW_BOTTOM)
+		if(lands[i].pos_y + jump_sum > WINDOWH)
 		{
 			lands[i].live = FALSE;
 		}
@@ -876,7 +914,7 @@ void draw_all_lands(int sum)
 //绘制火箭
 void draw_rocket(int sum)
 {
-	if (rocket.pos_y > WINDOW_BOTTOM)
+	if (rocket.pos_y + jump_sum > WINDOWH)
 	{
 		rocket.live = FALSE;
 	}
@@ -907,7 +945,9 @@ void player_control()
 		}
 		//如果没有按下左右方向键
 		if (!(ch == 0x3 || ch == 0x4))	
+		{
 			player.move(0, 0);
+		}
 	}
 	return;
 }
@@ -934,22 +974,14 @@ void if_player_dead()
 	}
 	if (player.bottom_y() > WINDOW_BOTTOM)
 	{
-		asm("ebreak");
-		//直接重置位置，纯纯开发人员专属无敌版。
 		//initplayer();
 		if (dead_time == -1)
 		{
 			dead_time = 0;
 		}
-		if (ch == ' ')
+		if (ch == 0x20)
 		{
 			initgame();
-		}
-		else if (ch == '\n')
-		{
-			delete_all_lands();
-			delete_all_strings();
-			asm("ebreak");
 		}
 	}
 	return;
@@ -971,29 +1003,37 @@ int main()
 {
 	seed(114514);
 	initgame();
+	int cycle = 0;
 	while (1)
 	{
-		debug();
-		//分别绘制不同对象
+		// debug();
+		cycle++;
+		output("cycle = %d\n", cycle);
 		output("now player.pos_x = %d, pos_y = %d\n", player.pos_x, player.pos_y);
-		draw_all_lands(jump_sum);
-		// draw_all_strings(jump_sum);
-		// draw_rocket(jump_sum);
-		player.show(jump_sum);
+		output("jump_sum = %d\n", jump_sum);
+		for(int i=0;i<LANDNUM;i++)
+		{
+			output("now lands[%d].pos_x = %d, pos_y = %d\n", i, lands[i].pos_x, lands[i].pos_y);
+		}
 		//玩家对象又运行了一帧，让其时间自增
 		++player;
-		//检测是否有键盘输入，修改玩家的坐标位置，以及判断是否要发生子弹
-		player_control();
+		//player的高度y坐标只在jumping调用后修改，故y修改后我们开始刷新跳跃总高度
+		refresh_jump_sum();
 		//调整y
 		player.adjust_y_by_jumping_status();
 		//判断是否与火箭碰撞。
 		contact_rocket();
 		//判断是否与弹簧或地面相碰撞。
 		on_string_or_land();
-		//player的高度y坐标只在jumping调用后修改，故y修改后我们开始刷新跳跃总高度
-		refresh_jump_sum();
 		//更新地面
 		refresh_all_elements();
+		//渲染画面
+		draw_all_lands(jump_sum);
+		draw_all_strings(jump_sum);
+		draw_rocket(jump_sum);
+		//检测是否有键盘输入，修改玩家的坐标位置，以及判断是否要发生子弹
+		player_control();
+		player.show(jump_sum);
 		//判断玩家是否死亡
 		if_player_dead();
 	}

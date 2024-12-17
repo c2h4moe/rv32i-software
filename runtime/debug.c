@@ -4,8 +4,9 @@
 static void serial_putchar(char c) {
     *(volatile char*)(SERIAL_PORT) = c;
 }
+int vsnprintf(char* out, int n, const char* s, va_list vl);
 
-void output(const char* s, ...) {
+int output(const char* s, ...) {
     va_list vl;
     va_start(vl, s);
     char out[256];  // fixed buffer size.
