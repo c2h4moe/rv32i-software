@@ -8,10 +8,10 @@ extern "C"{
 #define headline 408  //中线高度
 #define DS 50		  //左右移动速度
 #define LANDNUM 16    //后台所有地面数量
-#define STRINGNUM 4   //后台所有弹簧数量
+#define STRINGNUM 3   //后台所有弹簧数量
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
 #define LANDS_SPAN (2 * WINDOWH)                      //后台所有的地面所在的一个范围内，绝对值，正数。
-#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 205)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
+#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 305)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
 #define INTERVAL_LAND (LANDS_SPAN / LANDNUM)          //每一个地面的间隔
 
 #define WINDOWH 1024
@@ -23,7 +23,7 @@ extern "C"{
 #define FALSE 0
 #define TRUE 1
 
-#define time_for_a_jump 60      //使用多少帧完成一次完整跳跃
+#define time_for_a_jump 30      //使用多少帧完成一次完整跳跃
 #define V 60                    //普通起跳初速度，四分之一的总用帧乘以V即一次起跳最大上升高度/像素
 #define STRING_V 120            //弹簧起跳的初速度
 #define JUMP_HEIGHT (V * 20)           //一次起跳最大上升高度/像素
@@ -63,6 +63,8 @@ extern "C"{
 static int cur = 114514;
 static const int A = 1103515245; // parameter from glibc
 static const int C = 12345; // parameter from glibc
+int fragile_num;
+int fragile_index;
 
 int rand(){
     cur = (A * cur + C) & 0x7fffffff;
@@ -189,6 +191,7 @@ public:
     // fragilelandclass();
 	bool broken;
 	int broken_t; //距离破碎的时间
+	int broken_index;
 };
 
 //弹簧类
@@ -373,9 +376,8 @@ void playerclass::show(int sum)
 //这个函数返回是否与地面发生碰撞。
 bool landclass::is_contact(int last_t_bottom_y,int player_bottom_x,int player_bottom_y)
 {
-	//-20,+130 为了让玩家摸到一点砖也能跳 参数需要修改的
-	if ((last_t_bottom_y < pos_y + 2) && (player_bottom_y >= pos_y + 2)
-		&& (player_bottom_x >= pos_x - 20) && (player_bottom_x <= pos_x + 130))
+	if ((last_t_bottom_y < pos_y) && (player_bottom_y >= pos_y)
+		&& (player_bottom_x >= pos_x - 50) && (player_bottom_x <= pos_x + PLATFORM_W))
 	{
 		return TRUE;
 	}
@@ -406,12 +408,12 @@ void landclass::show(int sum, int index)
         //如果没坏
         if (!broken)
         {
-			change_vram(BREAK_PLATFORM, index, NOT_BREAK, pos_x, pos_y + sum);
+			change_vram(BREAK_PLATFORM, broken_index, NOT_BREAK, pos_x, pos_y + sum);
         }
         //如果坏了
         else
         {
-			change_vram(BREAK_PLATFORM, index, BREAK, pos_x, pos_y + sum);
+			change_vram(BREAK_PLATFORM, broken_index, BREAK, pos_x, pos_y + sum);
             pos_y += FRAGILELAND_DS;
             broken_t++;
         }
@@ -432,7 +434,7 @@ void stringlandclass::show(int sum, int index)
 {
 	//跟随基地面移动
 	pos_x = base->pos_x + relative_x;
-	pos_y = base->pos_y - 20;
+	pos_y = base->pos_y - 30;
 	//如果弹簧被触发了
 	if (triggerd)
 	{
@@ -466,15 +468,15 @@ void rocketclass::show(int sum)
 	if (base_player != nullptr && base_player->flying_t >= 0)
 	{
 		triggerd_t = base_player->flying_t;
-		pos_x = base_player->pos_x;
-		pos_y = base_player->pos_y;
-		change_vram(TOOL, 0, PROPELLER_RUNNING, pos_x, pos_y + sum);
+		pos_x = base_player->pos_x + 30;
+		pos_y = base_player->pos_y - PROPELLER_RUNNING_H;
+		change_vram(TOOL, 3, PROPELLER_RUNNING, pos_x, pos_y + sum);
 		return;
 	}
 	//跟随基地面移动
-	pos_x = base->pos_x + 21 + 10;
+	pos_x = base->pos_x + 30;
 	pos_y = base->pos_y - 70;
-	change_vram(TOOL, 1, PROPELLER, pos_x, pos_y + sum);
+	change_vram(TOOL, 3, PROPELLER, pos_x, pos_y + sum);
 	return;
 }
 
@@ -623,6 +625,7 @@ void initplayer()
 	return;
 }
 //绘制初始界面的所有地面
+//一帧内的随机数相同
 void initlands()
 {
 	int seed = 0;
@@ -723,6 +726,8 @@ void initglobal_variable()
 	the_bottom_land_index = 0;
 	last_t_bottom_y = 0;
 	dead_time = -1;
+	fragile_num = 0;
+	fragile_index = 0;
 	return;
 }
 //初始化所有弹簧
@@ -772,6 +777,8 @@ void delete_all_lands()
 	}
 	return;
 }
+
+
 //更新当前所有的地图元素 即将已经在屏幕下方 live=FALSE 的地图元素 重新在上方生成
 void refresh_all_elements()
 {
@@ -791,40 +798,23 @@ void refresh_all_elements()
         lands[the_bottom_land_index].live = TRUE;
 		lands[the_bottom_land_index].pos_x = land_x;
 		lands[the_bottom_land_index].pos_y = land_y;
-		//生成绿色地面
-		if (seed % 100 < 50)
+
+		if (lands[the_bottom_land_index].type == FRAGILELAND)
 		{
-			lands[the_bottom_land_index].type = GREENLAND;
-			if (seed % 10 == 0)
-			{
-				create_a_string(&lands[the_bottom_land_index]);
-			}
-			else
-			{
-                //如果不创建弹簧的话他就是最高的那一个实体地面
-				//我们来判断是否存在卡关现象，如果当前这个实体方块离现有（也就是上一个）
-                //的最高的实体方块超过了玩家可以起跳的最高高度，
-				//需要为上一个最高的实体方块创建弹簧，防止出现卡关
-				if (lands[the_highest_solid_land_index].pos_y - land_y > JUMP_HEIGHT)
-				{
-					create_a_string(&lands[the_highest_solid_land_index]);
-				}
-				else
-				{
-                    //如果没有超过玩家起跳高度那么说明上一个最高的实体方块肯定没有弹簧，可以生成火箭。
-					if (seed % 10 < 2)
-					{
-                        create_rocket(&lands[the_highest_solid_land_index]);
-					}
-				}
-				//继续将之重置为上一个最高的实体方块。
-				the_highest_solid_land_index = the_bottom_land_index;
-			}
+			fragile_num--;
+		}
+		//生成易碎地面
+		if (seed % 100 < 20 && fragile_num < 3)
+		{
+			lands[the_bottom_land_index].type = FRAGILELAND;
+			fragile_index = (fragile_index + 1) % 4;
+			lands[the_bottom_land_index].broken_index = fragile_index;
+			fragile_num++;
 			the_bottom_land_index = (the_bottom_land_index + 1) % LANDNUM;
 			continue;
 		}
 		//生成蓝色地面
-		if (seed % 100 < 75)
+		else if (seed % 100 < 50)
 		{
 			lands[the_bottom_land_index].type = BLUELAND;
 			if (seed % 5 == 1)
@@ -853,10 +843,35 @@ void refresh_all_elements()
 			the_bottom_land_index = (the_bottom_land_index + 1) % LANDNUM;
 			continue;
 		}
-		//生成易碎地面
-		if (seed % 100 < 100)
+		//生成绿色地面
+		else
 		{
-			lands[the_bottom_land_index].type = FRAGILELAND;
+			lands[the_bottom_land_index].type = GREENLAND;
+			if (seed % 10 == 0)
+			{
+				create_a_string(&lands[the_bottom_land_index]);
+			}
+			else
+			{
+                //如果不创建弹簧的话他就是最高的那一个实体地面
+				//我们来判断是否存在卡关现象，如果当前这个实体方块离现有（也就是上一个）
+                //的最高的实体方块超过了玩家可以起跳的最高高度，
+				//需要为上一个最高的实体方块创建弹簧，防止出现卡关
+				if (lands[the_highest_solid_land_index].pos_y - land_y > JUMP_HEIGHT)
+				{
+					create_a_string(&lands[the_highest_solid_land_index]);
+				}
+				else
+				{
+                    //如果没有超过玩家起跳高度那么说明上一个最高的实体方块肯定没有弹簧，可以生成火箭。
+					if (seed % 10 < 2)
+					{
+                        create_rocket(&lands[the_highest_solid_land_index]);
+					}
+				}
+				//继续将之重置为上一个最高的实体方块。
+				the_highest_solid_land_index = the_bottom_land_index;
+			}
 			the_bottom_land_index = (the_bottom_land_index + 1) % LANDNUM;
 			continue;
 		}
