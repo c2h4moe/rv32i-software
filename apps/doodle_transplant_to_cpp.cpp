@@ -982,21 +982,26 @@ void initgame()
 //调用后判断玩家是不是挂了（掉出屏幕），然后再指向对应操作
 void if_player_dead()
 {
-	char ch = getchark();
+	// char ch = getchark();
 	if (dead_time >= 0 )
 	{
 		dead_time++;
 	}
 	if (player.bottom_y() > WINDOW_BOTTOM)
 	{
-		//initplayer();
 		if (dead_time == -1)
 		{
 			dead_time = 0;
 		}
-		if (ch == 0x20)
+		output("fail\n");
+		while(1)
 		{
-			initgame();
+			char ch = getchark();
+			if(ch == 0x20)
+			{
+				initgame();
+				break;
+			}
 		}
 	}
 	return;
