@@ -12,7 +12,7 @@ extern "C"{
 #define STRINGNUM 3   //后台所有弹簧数量
 #define WINDOW_BOTTOM ( WINDOWH - jump_sum )
 #define LANDS_SPAN (2 * WINDOWH)                      //后台所有的地面所在的一个范围内，绝对值，正数。
-#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 305)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
+#define LANDS_SPAN_BOTTOM (WINDOW_BOTTOM + 205)       //后台所有的地面从哪里开始回收 205==WIDOWH/5
 #define INTERVAL_LAND (LANDS_SPAN / LANDNUM)          //每一个地面的间隔
 
 #define WINDOWH 1024
@@ -456,7 +456,7 @@ void stringlandclass::contact()
 bool stringlandclass::is_contact(int last_t_bottom_y, int player_bottom_x, int player_bottom_y)
 {
 	if ((last_t_bottom_y < pos_y) && (player_bottom_y >= pos_y)
-		&& (player_bottom_x >= pos_x - 20) && (player_bottom_x <= pos_x + SPRING_FULL_W + 20))
+		&& (player_bottom_x >= pos_x - DOODLE_W - 50) && (player_bottom_x <= pos_x + SPRING_FULL_W + 50))
 	{
 		return TRUE;
 	}
@@ -483,8 +483,8 @@ void rocketclass::show(int sum)
 
 bool rocketclass::is_contact(int x, int y)
 {
-	if (x > pos_x - 20 && x < pos_x + PROPELLER_W + 20 
-	 && y > pos_y - PROPELLER_H - 20 && y < pos_y + 20)
+	if (x > pos_x - 50 && x < pos_x + PROPELLER_W + 50 
+	 && y > pos_y - PROPELLER_H - 50 && y < pos_y + 50)
 	{
 		return TRUE;
 	}
@@ -915,7 +915,7 @@ void draw_all_lands(int sum)
 	for (int i = 0; i < LANDNUM; i++)
 	{
 		//如果地砖已经在地图底下的话那就关掉live，不显示了，也不判断碰撞
-		if(lands[i].pos_y + jump_sum > WINDOWH)
+		if(lands[i].pos_y > WINDOW_BOTTOM)
 		{
 			lands[i].live = FALSE;
 		}
