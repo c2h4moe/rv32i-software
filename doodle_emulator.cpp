@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 #include <chrono>
 #include <vector>
 #include <cassert>
@@ -67,14 +68,14 @@ struct Keyboard
         ready = 1;
     }
 } kbd;
-
+std::ofstream file4difftest("./std.txt");
 bool shouldRender = false; // 在这个周期是否应该渲染,set in mmio_write
 int game_mode = 0;
 int game_buf = 0;
 SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 
-int ram[4000000]; // simulate RAM
+int ram[1024]; // simulate RAM
 std::vector<std::string> ascii_shape;
 int cycle = 0;
 int sleepstate = 0;
@@ -316,6 +317,7 @@ void render_game()
         }
         img = findImage(reg->type, reg->getNum());
         if (img != NULL) {
+            std::cout<<"imgtype="<<img->type<<"\n";
             img->draw(reg);
         }
     }
@@ -324,6 +326,7 @@ void render_game()
     reg = &gameRegs[REGS_NUM - 1];
     img = findImage(reg->type, reg->getNum());
     if (img != NULL) {
+        std::cout<<"imgtype="<<img->type<<"\n";
         img->draw(reg);
     }
 
@@ -334,6 +337,7 @@ void render_game()
         }
         img = findImage(reg->type, reg->getNum());
         if (img != NULL) {
+            std::cout<<"imgtype="<<img->type<<"\n";
             img->draw(reg);
         }
     }
@@ -423,7 +427,7 @@ int mmio_read(int addr)
     switch (upper)
     {
     case 0:
-        return ram[(addr & 0xfffff) >> 2];;
+        return ram[(addr & 0xfff) >> 2];;
         break;
     case 1:
         return 0;
@@ -460,7 +464,7 @@ void mmio_write(int addr, int din)
     switch (upper)
     {
     case 0:
-        ram[(addr & 0xfffff) >> 2] = din; // 支持1MiB寻址
+        ram[(addr & 0xfff) >> 2] = din; // 支持1MiB寻址
         break;
     case 1:
         break;
@@ -468,6 +472,9 @@ void mmio_write(int addr, int din)
         break;
     case 3:
         /* TODO */
+        // std::cout<<"typenum="<<typeNum<<"\n";
+        // std::cout<<"typeind="<<typeIndex<<"\n";
+        // std::cout<<"regind="<<regIndex<<"\n";
         gameRegs[regIndex].set(din);
         shouldRender = true;
         break;
@@ -479,7 +486,7 @@ void mmio_write(int addr, int din)
         timebegin = std::chrono::high_resolution_clock::now();
         break;
     case 0xbee:
-        std::cerr<<static_cast<char>(din);
+        std::cout<<static_cast<char>(din);
         break;
     default:
         break;
@@ -516,6 +523,7 @@ void Simple_CPU::eval()
         return;
     }
     pc = next_pc;
+    file4difftest << std::hex << std::setw(8) << std::setfill('0') << pc << "\n";
     
     int inst = ROM[(pc & 0x3fff) >> 2]; // 最多支持4096条指令
     int opcode = (inst >> 2) & 0b11111;
@@ -572,6 +580,7 @@ void Simple_CPU::eval()
             break;
         }
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x4:
         reg_wa = rd;
@@ -608,6 +617,7 @@ void Simple_CPU::eval()
             break;
         }
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x0:
         reg_wa = rd;
@@ -635,6 +645,7 @@ void Simple_CPU::eval()
             break;
         }
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x18:
         reg_we = 0;
@@ -709,6 +720,7 @@ void Simple_CPU::eval()
             mem_din = reg1;
         }
         mmio_write(mem_wa, mem_din);
+        file4difftest << "writemem\n" << std::hex << std::setw(8) << std::setfill('0') << mem_wa << "\n" << std::setw(8) << std::setfill('0') << mem_din << "\n";
         break;
     case 0x0d:
         mem_we = 0;
@@ -716,6 +728,7 @@ void Simple_CPU::eval()
         reg_wa = rd;
         reg_din = U_imm;
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x05:
         mem_we = 0;
@@ -723,6 +736,7 @@ void Simple_CPU::eval()
         reg_wa = rd;
         reg_din = pc + U_imm;
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x1b:
         mem_we = 0;
@@ -731,6 +745,7 @@ void Simple_CPU::eval()
         reg_din = pc + 4;
         next_pc = pc + J_imm;
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x19:
         mem_we = 0;
@@ -739,6 +754,7 @@ void Simple_CPU::eval()
         reg_din = pc + 4;
         next_pc = regfile[rs0] + I_imm;
         regfile[rd] = reg_din;
+        file4difftest << "writereg\n" << std::hex << std::setw(2) << std::setfill('0') << rd << "\n" << std::setw(8) << std::setfill('0') << reg_din << "\n";
         break;
     case 0x1c:
         mem_we = 0;
@@ -751,7 +767,7 @@ void Simple_CPU::eval()
 }
 void init_mem(const char *ram_file)
 {
-    memset(ram,0,sizeof(ram));
+    // memset(ram,0,sizeof(ram));
     std::ifstream file(ram_file);
     std::string elem;
     int size = 0;

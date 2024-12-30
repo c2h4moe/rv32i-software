@@ -2,6 +2,7 @@ extern "C"{
 	#include "gameio.h"
 	#include "math.c"
 	#include "debug.h"
+	#include "basictime.h"
 }
 
 
@@ -1021,7 +1022,7 @@ void debug()
 
 int main() 
 {
-	seed(114514);
+	seed(1919810);
 	initgame();
 	int cycle = 0;
 	while (1)
@@ -1056,6 +1057,10 @@ int main()
 		player.show(jump_sum);
 		//判断玩家是否死亡
 		if_player_dead();
+		#ifndef SIM_MODE
+		sleep(50);
+		#else
+		#endif
 	}
 	while(1){}
 

@@ -3,3 +3,4 @@ build/
 runtime/*.o
 runtime/*.a
 rv32i_emulator
+difftest/
