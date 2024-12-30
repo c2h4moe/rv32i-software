@@ -994,7 +994,7 @@ void if_player_dead()
 		{
 			dead_time = 0;
 		}
-		output("fail\n");
+		// output("fail\n");
 		while(1)
 		{
 			char ch = getchark();
@@ -1029,12 +1029,12 @@ int main()
 	{
 		// debug();
 		cycle++;
-		output("cycle = %d\n", cycle);
-		output("now player.pos_x = %d, pos_y = %d\n", player.pos_x, player.pos_y);
-		output("jump_sum = %d\n", jump_sum);
+		// output("cycle = %d\n", cycle);
+		// output("now player.pos_x = %d, pos_y = %d\n", player.pos_x, player.pos_y);
+		// output("jump_sum = %d\n", jump_sum);
 		for(int i=0;i<LANDNUM;i++)
 		{
-			output("now lands[%d].pos_x = %d, pos_y = %d\n", i, lands[i].pos_x, lands[i].pos_y);
+			// output("now lands[%d].pos_x = %d, pos_y = %d\n", i, lands[i].pos_x, lands[i].pos_y);
 		}
 		//玩家对象又运行了一帧，让其时间自增
 		++player;
